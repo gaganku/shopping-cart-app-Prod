@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | ModernShop</title>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --secondary: #1e293b;
+            --bg: #0f172a;
+            --surface: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-light: #94a3b8;
+            --accent: #22d3ee;
+            --danger: #fb7185;
+            --success: #4ade80;
+            --radius: 24px;
+            --gradient-main: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            --gradient-text: linear-gradient(to right, #c084fc, #e879f9, #22d3ee);
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            background: var(--gradient-text);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 1rem 0;
+            letter-spacing: -1px;
+        }
+
+        .admin-section {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+            transition: transform 0.3s ease;
+        }
+
+        .admin-section:hover {
+            transform: translateY(-5px);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        h2 {
+            color: white;
+            font-size: 1.8rem;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.05);
+            transform: scale(1.01);
+        }
+
+        .upload-btn {
+            padding: 1rem 2rem;
+            background: var(--gradient-main);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            margin-top: 1.5rem;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 1.5rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 1.25rem;
+            color: var(--text-light);
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-admin {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .badge-verified {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        .badge-user {
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        /* Custom Checkbox */
+        input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            vertical-align: middle;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+            background-size: 14px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        input[type="checkbox"]:hover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--danger);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .user-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 1rem 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 0.5rem;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .user-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gradient-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .modal-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-btn-confirm {
+            background: var(--danger);
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background: #f43f5e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(251, 113, 133, 0.4);
+        }
+
+        /* Cyber Bot Styles */
+        .cyber-bot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            pointer-events: all;
+            animation: floatBot 3s ease-in-out infinite;
+        }
+
+        @keyframes floatBot {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .bot-body {
+            width: 60px;
+            height: 60px;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            position: relative;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .bot-body:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.5);
+        }
+
+        .bot-head {
+            width: 40px;
+            height: 30px;
+            background: var(--secondary);
+            border-radius: 10px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bot-face {
+            display: flex;
+            gap: 6px;
+        }
+
+        .bot-eye {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--accent);
+        }
+
+        .bot-eye.blink {
+            animation: blink 0.2s ease-in-out;
+        }
+
+        @keyframes blink {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.1); }
+        }
+
+        .bot-antenna {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 15px;
+            background: var(--text-light);
+        }
+
+        .antenna-ball {
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: var(--danger);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--danger);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .bot-speech-bubble {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            background: white;
+            color: var(--secondary);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .bot-speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            right: 20px;
+            width: 12px;
+            height: 12px;
+            background: white;
+            transform: rotate(45deg);
+        }
+
+        .bot-speech-bubble.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* Responsive Styles */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 1rem;
+                margin-top: 80px;
+            }
+
+            .admin-header {
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .admin-section {
+                padding: 1.5rem;
+            }
+
+            /* Stack search and buttons */
+            .admin-section > div:first-child {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .admin-section > div:first-child > div {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            #search-input {
+                width: 100% !important;
+                box-sizing: border-box;
+            }
+
+            .upload-btn {
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+
+            /* Adjust table for mobile */
+            th, td {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 1rem !important;
+            }
+
+            .admin-container {
+                margin-top: 100px;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            .upload-area {
+                padding: 1.5rem;
+            }
+
+            /* Adjust bot for mobile */
+            .cyber-bot {
+                bottom: 10px;
+                right: 10px;
+                transform: scale(0.8);
+            }
+            
+            .bot-speech-bubble {
+                bottom: 70px;
+                right: 10px;
+                font-size: 0.8rem;
+            }
+        }
+
+    </style>
+    <script src="scripts/bots.js"></script>
+</head>
+<body>
+    <div class="shape-container">
+        <div class="shape-3d cube">
+            <div class="front"></div>
+            <div class="back"></div>
+            <div class="right"></div>
+            <div class="left"></div>
+            <div class="top"></div>
+            <div class="bottom"></div>
+        </div>
+        <div class="sphere-3d"></div>
+    </div>
+
+    <header style="padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; z-index: 10;">
+        <a href="index.html" style="font-size: 1.5rem; font-weight: 800; color: white; text-decoration: none; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ModernShop</a>
+        <a href="index.html" style="color: var(--text-light); text-decoration: none; font-weight: 600; transition: color 0.2s;">Exit Admin</a>
+    </header>
+
+    <div class="admin-container" style="margin-top: 60px;">
+        <div class="admin-header">
+            <h1>🛡️ Admin Dashboard</h1>
+            <p>Manage users and bulk upload accounts</p>
+        </div>
+
+        <!-- Bulk Upload Section -->
+        <div class="admin-section">
+            <h2>📤 Bulk User Upload</h2>
+            <p>Upload an Excel file (.xlsx) with a column named "email" containing user email addresses.</p>
+            
+            <div class="upload-area">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary); margin-bottom: 1rem;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p><strong>Choose an Excel file</strong></p>
+                <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
+                <button class="upload-btn" onclick="document.getElementById('file-input').click()">Select File</button>
+                <p id="file-name" style="margin-top: 1rem; color: var(--text-light);"></p>
+            </div>
+
+            <button id="upload-btn" class="upload-btn" style="width: 100%; margin-top: 1rem; display: none;">Upload Users</button>
+
+            <!-- Progress Bar -->
+            <div id="upload-progress" style="display: none; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 600; color: var(--text);">Uploading...</span>
+                    <span id="progress-percent" style="font-weight: 600; color: var(--primary);">0%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s ease;"></div>
+                </div>
+                <p id="progress-status" style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.875rem;">Preparing upload...</p>
+            </div>
+
+            <div id="upload-results" class="results" style="display: none;"></div>
+        </div>
+
+        <!-- Users List Section -->
+        <div class="admin-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>👥 All Users</h2>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="text" id="search-input" placeholder="Search users..." 
+                        style="padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; width: 250px;">
+                    <div>
+                        <button id="delete-selected-btn" class="upload-btn" style="background: #dc2626; display: none; margin-right: 0.5rem; margin-top: 0;">Delete Selected</button>
+                        <button id="refresh-btn" class="upload-btn" style="margin-top: 0;">Refresh List</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="users-table" id="users-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="select-all" style="cursor: pointer;">
+                            </th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Role</th>
+                            <th>Admin Verified</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <a href="index.html" style="display: inline-block; margin-top: 1rem; color: var(--primary); text-decoration: none;">← Back to Shop</a>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h3>Confirm User Deletion</h3>
+            </div>
+            <div class="modal-body">
+                <p><strong>Are you sure you want to delete the following <span id="modal-user-count">0</span> user(s)?</strong></p>
+                <p style="color: var(--text-light); font-size: 0.875rem;">This action cannot be undone.</p>
+                <div id="modal-user-list" class="user-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" id="modal-cancel">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" id="modal-confirm">Delete Users</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is admin
+        async function checkAdmin() {
+            const response = await fetch('/api/auth/status');
+            const data = await response.json();
+            if (!data.authenticated || !data.user.isAdmin) {
+                alert('Access Denied: Admins only');
+                window.location.href = '/index.html';
+                return;
+            }
+        }
+
+        // File selection
+        document.getElementById('file-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('file-name').textContent = `Selected: ${file.name}`;
+                document.getElementById('upload-btn').style.display = 'block';
+            }
+        });
+
+        // Upload file
+        document.getElementById('upload-btn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Hide upload button and show progress bar
+            document.getElementById('upload-btn').style.display = 'none';
+            document.getElementById('upload-progress').style.display = 'block';
+            document.getElementById('upload-results').style.display = 'none';
+
+            // Use XMLHttpRequest for progress tracking
+            const xhr = new XMLHttpRequest();
+
+            let totalUsers = 0;
+            let startTime = Date.now();
+
+            // Track response headers to get total user count
+            xhr.addEventListener('readystatechange', () => {
+                if (xhr.readyState === 2) { // Headers received
+                    totalUsers = parseInt(xhr.getResponseHeader('X-Total-Users')) || 0;
+                    if (totalUsers > 0) {
+                        document.getElementById('progress-status').textContent = `Processing ${totalUsers} users...`;
+                    }
+                }
+            });
+
+            // Simulate progress based on time (since we can't track individual user processing)
+            let currentProgress = 0;
+            const progressInterval = setInterval(() => {
+                if (totalUsers > 0) {
+                    const elapsed = Date.now() - startTime;
+                    // Estimate: ~1000ms per user (slower for better visual)
+                    const targetProgress = Math.min(90, (elapsed / (totalUsers * 1000)) * 100);
+                    
+                    // Smooth increment towards target
+                    if (currentProgress < targetProgress) {
+                        currentProgress = Math.min(currentProgress + 2, targetProgress);
+                    }
+                    
+                    document.getElementById('progress-bar').style.width = currentProgress + '%';
+                    document.getElementById('progress-percent').textContent = Math.round(currentProgress) + '%';
+                    
+                    const estimatedProcessed = Math.floor((currentProgress / 100) * totalUsers);
+                    document.getElementById('progress-status').textContent = 
+                        `Processing users... ${estimatedProcessed}/${totalUsers}`;
+                } else {
+                    // If we don't know total yet, just increment slowly
+                    currentProgress = Math.min(currentProgress + 1, 80);
+                    document.getElementById('progress-bar').style.width = currentProgress + '%';
+                    document.getElementById('progress-percent').textContent = Math.round(currentProgress) + '%';
+                }
+            }, 100);
+
+            // Handle completion
+            xhr.addEventListener('load', () => {
+                clearInterval(progressInterval);
+                
+                // Show 100% completion
+                document.getElementById('progress-bar').style.width = '100%';
+                document.getElementById('progress-percent').textContent = '100%';
+                document.getElementById('progress-status').textContent = 
+                    totalUsers > 0 ? `Completed ${totalUsers}/${totalUsers} users` : 'Processing complete';
+                
+                setTimeout(() => {
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        
+                        // Hide progress bar
+                        document.getElementById('upload-progress').style.display = 'none';
+                        
+                        // Show results
+                        displayResults(data.results);
+                        loadUsers(); // Refresh user list
+                        
+                        // Reset file input
+                        fileInput.value = '';
+                        document.getElementById('file-name').textContent = '';
+                        
+                        // Reset progress
+                        document.getElementById('progress-bar').style.width = '0%';
+                        document.getElementById('progress-percent').textContent = '0%';
+                        document.getElementById('progress-status').textContent = 'Preparing upload...';
+                    } else {
+                        const data = JSON.parse(xhr.responseText);
+                        alert(data.error || 'Upload failed');
+                        document.getElementById('upload-progress').style.display = 'none';
+                        document.getElementById('upload-btn').style.display = 'block';
+                    }
+                }, 800);
+            });
+
+            // Handle errors
+            xhr.addEventListener('error', () => {
+                clearInterval(progressInterval);
+                alert('Server error during upload');
+                document.getElementById('upload-progress').style.display = 'none';
+                document.getElementById('upload-btn').style.display = 'block';
+            });
+
+            // Send request
+            xhr.open('POST', '/api/admin/bulk-upload');
+            xhr.send(formData);
+        });
+
+        // Display upload results
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('upload-results');
+            resultsDiv.style.display = 'block';
+            
+            let html = '<h3>Upload Results</h3>';
+            
+            if (results.success.length > 0) {
+                html += `<p><strong>✅ Successfully created ${results.success.length} users:</strong></p>`;
+                results.success.forEach(user => {
+                    html += `<div class="success-item">• ${user.email} → ${user.username}</div>`;
+                });
+            }
+            
+            if (results.failed.length > 0) {
+                html += `<p style="margin-top: 1rem;"><strong>❌ Failed ${results.failed.length} users:</strong></p>`;
+                results.failed.forEach(item => {
+                    html += `<div class="error-item">• ${item.email}: ${item.reason}</div>`;
+                });
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // Load users
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users');
+                const data = await response.json();
+
+                if (response.ok) {
+                    const tbody = document.getElementById('users-tbody');
+                    tbody.innerHTML = '';
+
+                    data.users.forEach(user => {
+                        const row = document.createElement('tr');
+                        const isCurrentAdmin = user.username === 'admin'; // Prevent deleting main admin
+                        
+                        row.innerHTML = `
+                            <td>
+                                <input type="checkbox" class="user-checkbox" 
+                                    data-user-id="${user._id}" 
+                                    data-username="${user.username}"
+                                    data-email="${user.email || 'N/A'}"
+                                    ${isCurrentAdmin ? 'disabled title="Cannot delete main admin"' : ''}
+                                    style="cursor: ${isCurrentAdmin ? 'not-allowed' : 'pointer'};">
+                            </td>
+                            <td>${user.username}</td>
+                            <td>${user.email || 'N/A'}</td>
+                            <td>
+                                ${user.isVerified 
+                                    ? '<span class="badge badge-verified">Verified</span>' 
+                                    : '<span class="badge badge-unverified">Unverified</span>'}
+                            </td>
+                            <td>
+                                ${user.isAdmin 
+                                    ? '<span class="badge badge-admin">Admin</span>' 
+                                    : '<span class="badge badge-user">User</span>'}
+                            </td>
+                            <td>
+                                ${user.isAdminVerified
+                                    ? '<span class="badge badge-verified">Approved</span>'
+                                    : '<span class="badge badge-unverified" style="background: rgba(251, 113, 133, 0.2); color: #fb7185; border-color: rgba(251, 113, 133, 0.3);">Pending</span>'}
+                            </td>
+                            <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                            <td>
+                                <button class="upload-btn" style="padding: 0.25rem 0.75rem; font-size: 0.75rem; margin: 0; background: ${user.isAdminVerified ? 'rgba(255,255,255,0.1)' : 'var(--success)'}; border: 1px solid rgba(255,255,255,0.1);" 
+                                    onclick="toggleVerification('${user._id}', ${user.isAdminVerified})">
+                                    ${user.isAdminVerified ? 'Revoke' : 'Verify'}
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    // Add checkbox listeners
+                    updateDeleteButton();
+                    document.querySelectorAll('.user-checkbox').forEach(cb => {
+                        cb.addEventListener('change', updateDeleteButton);
+                    });
+                } else {
+                    if (response.status === 403) {
+                        alert('Admin access required');
+                        window.location.href = '/index.html';
+                    } else {
+                        alert('Failed to load users');
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading users:', err);
+            }
+        }
+
+        // Toggle User Verification
+        async function toggleVerification(userId, currentStatus) {
+            try {
+                const response = await fetch('/api/admin/verify-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, verify: !currentStatus })
+                });
+
+                if (response.ok) {
+                    loadUsers(); // Refresh list
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to update verification status');
+                }
+            } catch (err) {
+                console.error('Error updating status:', err);
+                alert('Server error');
+            }
+        }
+
+        // Update delete button visibility
+        function updateDeleteButton() {
+            const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+            const deleteBtn = document.getElementById('delete-selected-btn');
+            
+            if (checkedBoxes.length > 0) {
+                deleteBtn.style.display = 'inline-block';
+                deleteBtn.textContent = `Delete Selected (${checkedBoxes.length})`;
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+        }
+
+        // Select all checkbox
+        document.getElementById('select-all').addEventListener('change', (e) => {
+            document.querySelectorAll('.user-checkbox:not(:disabled)').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+            updateDeleteButton();
+        });
+
+        // Delete selected users
+        let pendingDeleteData = null;
+
+        document.getElementById('delete-selected-btn').addEventListener('click', () => {
+            const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+            const userIds = Array.from(checkedBoxes).map(cb => cb.dataset.userId);
+            const usernames = Array.from(checkedBoxes).map(cb => cb.dataset.username);
+            const emails = Array.from(checkedBoxes).map(cb => cb.dataset.email);
+
+            // Store data for later use
+            pendingDeleteData = { userIds, usernames, emails };
+
+            // Show modal with user list
+            showDeleteModal(usernames, emails);
+        });
+
+        // Show delete confirmation modal
+        function showDeleteModal(usernames, emails) {
+            const modal = document.getElementById('delete-modal');
+            const userList = document.getElementById('modal-user-list');
+            const userCount = document.getElementById('modal-user-count');
+
+            userCount.textContent = usernames.length;
+            userList.innerHTML = '';
+
+            usernames.forEach((username, index) => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                
+                const initial = username.charAt(0).toUpperCase();
+                const email = emails[index] || 'N/A';
+                
+                userItem.innerHTML = `
+                    <div class="user-avatar">${initial}</div>
+                    <div class="user-info">
+                        <div class="username">${username}</div>
+                        <div class="email">${email}</div>
+                    </div>
+                `;
+                userList.appendChild(userItem);
+            });
+
+            modal.classList.add('active');
+        }
+
+        // Hide modal
+        function hideDeleteModal() {
+            const modal = document.getElementById('delete-modal');
+            modal.classList.remove('active');
+            pendingDeleteData = null;
+        }
+
+        // Modal cancel button
+        document.getElementById('modal-cancel').addEventListener('click', hideDeleteModal);
+
+        // Click outside modal to close
+        document.getElementById('delete-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'delete-modal') {
+                hideDeleteModal();
+            }
+        });
+
+        // Modal confirm button - actually delete users
+        document.getElementById('modal-confirm').addEventListener('click', async () => {
+            if (!pendingDeleteData) return;
+
+            const userIdsToDelete = pendingDeleteData.userIds;
+            hideDeleteModal();
+
+            try {
+                const response = await fetch('/api/admin/users/bulk-delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userIds: userIdsToDelete })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`Successfully deleted ${data.deletedCount} user(s)`);
+                    document.getElementById('select-all').checked = false;
+                    loadUsers();
+                } else {
+                    alert(data.error || 'Failed to delete users');
+                }
+            } catch (err) {
+                alert('Server error: ' + err.message);
+            }
+        });
+
+        // Refresh button
+        document.getElementById('refresh-btn').addEventListener('click', loadUsers);
+
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#users-tbody tr');
+            
+            rows.forEach(row => {
+                const username = row.children[1]?.textContent.toLowerCase() || '';
+                const email = row.children[2]?.textContent.toLowerCase() || '';
+                
+                if (username.includes(searchTerm) || email.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Initialize
+        checkAdmin();
+        loadUsers();
+    </script>
+    <script src="scripts/bots.js"></script>
+</body>
+</html>

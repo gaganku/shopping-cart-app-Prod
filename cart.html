@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart | ModernShop</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="shape-container">
+        <div class="shape-3d cube">
+            <div class="front"></div>
+            <div class="back"></div>
+            <div class="right"></div>
+            <div class="left"></div>
+            <div class="top"></div>
+            <div class="bottom"></div>
+        </div>
+        <div class="sphere-3d"></div>
+    </div>
+
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">ModernShop</a>
+            <div class="header-controls">
+                <span id="user-display" style="font-weight: 600; color: var(--primary);"></span>
+                <button class="logout-btn" onclick="window.location.href='index.html'">← Back to Shop</button>
+            </div>
+        </div>
+    </header>
+
+    <main style="padding: 8rem 2rem 2rem;">
+        <div class="cart-container" style="max-width: 900px; margin: 0 auto;">
+            <h1 style="font-size: 2.5rem; font-weight: 900; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2rem;">Your Cart</h1>
+            
+            <div id="cart-items-container"></div>
+            
+            <div id="empty-cart" style="display: none; text-align: center; padding: 4rem 2rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-light); margin-bottom: 1rem; opacity: 0.5;">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <h2 style="color: var(--text-light); margin: 0 0 1rem 0;">Your cart is empty</h2>
+                <p style="color: var(--text-light); opacity: 0.7;">Add some amazing products to get started!</p>
+                <a href="index.html" style="display: inline-block; margin-top: 2rem; padding: 1rem 2rem; background: var(--gradient-main); color: white; border-radius: 12px; text-decoration: none; font-weight: 600;">Continue Shopping</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Remove Confirmation Modal -->
+    <div id="remove-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h2 class="modal-title">Cancel Order?</h2>
+            <p class="modal-text">Are you sure you want to remove this item from your cart? This will cancel your order.</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" onclick="closeRemoveModal()">Keep Item</button>
+                <button class="modal-btn modal-btn-danger" onclick="confirmRemove()">Remove Item</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Item removed from cart</div>
+
+    <script>
+        let currentOrderId = null;
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/status', { credentials: 'include' });
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    const displayName = data.user.displayName || data.user.username;
+                    document.getElementById('user-display').textContent = `Hi, ${displayName}`;
+                    loadCart(data.user.username);
+                } else {
+                    const username = sessionStorage.getItem('currentUser');
+                    if (username) {
+                        document.getElementById('user-display').textContent = `Hi, ${username}`;
+                        loadCart(username);
+                    } else {
+                        window.location.href = '/login.html';
+                    }
+                }
+            } catch (err) {
+                console.error('Auth check failed:', err);
+                window.location.href = '/login.html';
+            }
+        }
+
+        async function loadCart(username) {
+            try {
+                const response = await fetch(`/api/orders/${username}`);
+                const data = await response.json();
+
+                const container = document.getElementById('cart-items-container');
+                const emptyCart = document.getElementById('empty-cart');
+
+                if (data.order) {
+                    // Show cart item
+                    container.innerHTML = `
+                        <div class="cart-item" style="background: var(--surface); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                                <div>
+                                    <h3 style="font-size: 1.5rem; margin: 0 0 0.5rem 0; color: white;">${data.order.productName}</h3>
+                                    <p style="color: var(--text-light); margin: 0;">Ordered on ${new Date(data.order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                </div>
+                                <button class="modal-btn modal-btn-danger" onclick="showRemoveModal('${data.order._id}')" style="margin: 0;">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                        <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 1.5rem; margin-top: 2rem;">
+                            <p style="margin: 0; color: var(--primary); font-weight: 600;">
+                                ℹ️ Note: You can only purchase one item total. Remove this item to purchase a different product.
+                            </p>
+                        </div>
+                    `;
+                    container.style.display = 'block';
+                    emptyCart.style.display = 'none';
+                } else {
+                    // Show empty cart
+                    container.style.display = 'none';
+                    emptyCart.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Failed to load cart:', err);
+                showToast('Failed to load cart');
+            }
+        }
+
+        function showRemoveModal(orderId) {
+            currentOrderId = orderId;
+            document.getElementById('remove-modal').style.display = 'flex';
+        }
+
+        function closeRemoveModal() {
+            currentOrderId = null;
+            document.getElementById('remove-modal').style.display = 'none';
+        }
+
+        async function confirmRemove() {
+            if (!currentOrderId) return;
+
+            try {
+                const response = await fetch(`/api/orders/${currentOrderId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    closeRemoveModal();
+                    showToast('Item removed from cart');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert(data.error || 'Failed to remove item');
+                }
+            } catch (err) {
+                console.error('Failed to remove item:', err);
+                alert('Failed to remove item');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize
+        checkAuth();
+    </script>
+    <script src="scripts/bots.js"></script>
+</body>
+</html>

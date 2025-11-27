@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Test - No Cache</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body>
+    <h1>Testing Progress Bar</h1>
+    <p>This page forces a fresh load. Click below to go to admin:</p>
+    <a href="admin.html?v=2.0" style="display: inline-block; padding: 1rem 2rem; background: purple; color: white; text-decoration: none; border-radius: 8px;">Go to Admin Dashboard (Fresh)</a>
+    
+    <hr>
+    <h2>Or test here:</h2>
+    <input type="file" id="test-file" accept=".xlsx">
+    <button id="test-upload">Test Upload</button>
+    <div id="test-progress" style="margin-top: 20px; display: none;">
+        <div style="font-weight: bold; margin-bottom: 10px;">
+            Progress: <span id="test-percent">0%</span>
+        </div>
+        <div style="width: 100%; height: 30px; background: #eee; border-radius: 5px; overflow: hidden;">
+            <div id="test-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); transition: width 0.3s;"></div>
+        </div>
+        <div id="test-status" style="margin-top: 10px; color: #666;">Ready...</div>
+    </div>
+    <div id="test-results" style="margin-top: 20px;"></div>
+
+    <script>
+        document.getElementById('test-upload').addEventListener('click', () => {
+            const file = document.getElementById('test-file').files[0];
+            if (!file) {
+                alert('Select a file first');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            document.getElementById('test-progress').style.display = 'block';
+            document.getElementById('test-results').innerHTML = '';
+
+            const xhr = new XMLHttpRequest();
+            let totalUsers = 0;
+            let startTime = Date.now();
+            let currentProgress = 0;
+
+            xhr.addEventListener('readystatechange', () => {
+                if (xhr.readyState === 2) {
+                    totalUsers = parseInt(xhr.getResponseHeader('X-Total-Users')) || 0;
+                    console.log('Total users:', totalUsers);
+                    document.getElementById('test-status').textContent = `Processing ${totalUsers} users...`;
+                }
+            });
+
+            const progressInterval = setInterval(() => {
+                if (totalUsers > 0) {
+                    const elapsed = Date.now() - startTime;
+                    // Estimate: ~1000ms per user (slower for better visual)
+                    const targetProgress = Math.min(90, (elapsed / (totalUsers * 1000)) * 100);
+                    
+                    // Smooth increment towards target
+                    if (currentProgress < targetProgress) {
+                        currentProgress = Math.min(currentProgress + 2, targetProgress);
+                    }
+                    
+                    document.getElementById('test-bar').style.width = currentProgress + '%';
+                    document.getElementById('test-percent').textContent = Math.round(currentProgress) + '%';
+                    
+                    const estimatedProcessed = Math.floor((currentProgress / 100) * totalUsers);
+                    document.getElementById('test-status').textContent = 
+                        `Processing users... ${estimatedProcessed}/${totalUsers}`;
+                } else {
+                    // If we don't know total yet, just increment slowly
+                    currentProgress = Math.min(currentProgress + 1, 80);
+                    document.getElementById('test-bar').style.width = currentProgress + '%';
+                    document.getElementById('test-percent').textContent = Math.round(currentProgress) + '%';
+                }
+            }, 100);
+
+            xhr.addEventListener('load', () => {
+                clearInterval(progressInterval);
+                
+                document.getElementById('test-bar').style.width = '100%';
+                document.getElementById('test-percent').textContent = '100%';
+                document.getElementById('test-status').textContent = 
+                    totalUsers > 0 ? `Completed ${totalUsers}/${totalUsers} users!` : 'Complete!';
+                
+                setTimeout(() => {
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        document.getElementById('test-results').innerHTML = 
+                            `<h3>Success!</h3><pre>${JSON.stringify(data.results, null, 2)}</pre>`;
+                    } else {
+                        alert('Upload failed');
+                    }
+                }, 1000);
+            });
+
+            xhr.addEventListener('error', () => {
+                clearInterval(progressInterval);
+                alert('Error during upload');
+            });
+
+            xhr.open('POST', '/api/admin/bulk-upload');
+            xhr.send(formData);
+        });
+    </script>
+</body>
+</html>

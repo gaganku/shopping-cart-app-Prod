@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Viewer - Shopping Cart</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+
+        button.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .collection-view {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .collection-title {
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .document {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .document pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #c62828;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ MongoDB Database Viewer</h1>
+        
+        <div class="controls">
+            <button onclick="loadCollection('users')" id="btn-users">👥 Users</button>
+            <button onclick="loadCollection('products')" id="btn-products">📦 Products</button>
+            <button onclick="loadCollection('orders')" id="btn-orders">🛒 Orders</button>
+            <button onclick="loadAll()" id="btn-all">🔄 Refresh All</button>
+        </div>
+
+        <div id="stats" class="stats"></div>
+        <div id="content"></div>
+    </div>
+
+    <script>
+        let currentCollection = null;
+
+        async function loadCollection(collectionName) {
+            currentCollection = collectionName;
+            
+            // Update button states
+            document.querySelectorAll('.controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn-${collectionName}`).classList.add('active');
+
+            const content = document.getElementById('content');
+            content.innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                let endpoint = '';
+                if (collectionName === 'users') {
+                    endpoint = '/api/users';
+                } else if (collectionName === 'products') {
+                    endpoint = '/api/products';
+                } else if (collectionName === 'orders') {
+                    endpoint = '/api/orders';
+                }
+
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayCollection(collectionName, data);
+            } catch (error) {
+                content.innerHTML = `<div class="error">Error loading ${collectionName}: ${error.message}</div>`;
+            }
+        }
+
+        function displayCollection(name, data) {
+            const content = document.getElementById('content');
+            
+            if (!data || data.length === 0) {
+                content.innerHTML = `
+                    <div class="collection-view">
+                        <h2 class="collection-title">${name.charAt(0).toUpperCase() + name.slice(1)}</h2>
+                        <div class="empty-state">No documents found in this collection</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <div class="collection-view">
+                    <h2 class="collection-title">${name.charAt(0).toUpperCase() + name.slice(1)} (${data.length} documents)</h2>
+                    ${data.map((doc, index) => `
+                        <div class="document">
+                            <strong>Document ${index + 1}:</strong>
+                            <pre>${JSON.stringify(doc, null, 2)}</pre>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+
+        async function loadAll() {
+            document.querySelectorAll('.controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById('btn-all').classList.add('active');
+
+            const content = document.getElementById('content');
+            const stats = document.getElementById('stats');
+            content.innerHTML = '<div class="loading">Loading all collections...</div>';
+            stats.innerHTML = '';
+
+            try {
+                const [users, products, orders] = await Promise.all([
+                    fetch('/api/users').then(r => r.json()).catch(() => []),
+                    fetch('/api/products').then(r => r.json()).catch(() => []),
+                    fetch('/api/orders').then(r => r.json()).catch(() => [])
+                ]);
+
+                // Display stats
+                stats.innerHTML = `
+                    <div class="stat-card">
+                        <h3>Total Users</h3>
+                        <div class="value">${users.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Products</h3>
+                        <div class="value">${products.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Orders</h3>
+                        <div class="value">${orders.length}</div>
+                    </div>
+                `;
+
+                // Display all collections
+                let html = '';
+                
+                if (users.length > 0) {
+                    html += `
+                        <div class="collection-view">
+                            <h2 class="collection-title">👥 Users (${users.length})</h2>
+                            ${users.map((doc, index) => `
+                                <div class="document">
+                                    <strong>User ${index + 1}:</strong>
+                                    <pre>${JSON.stringify(doc, null, 2)}</pre>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                if (products.length > 0) {
+                    html += `
+                        <div class="collection-view">
+                            <h2 class="collection-title">📦 Products (${products.length})</h2>
+                            ${products.map((doc, index) => `
+                                <div class="document">
+                                    <strong>Product ${index + 1}:</strong>
+                                    <pre>${JSON.stringify(doc, null, 2)}</pre>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                if (orders.length > 0) {
+                    html += `
+                        <div class="collection-view">
+                            <h2 class="collection-title">🛒 Orders (${orders.length})</h2>
+                            ${orders.map((doc, index) => `
+                                <div class="document">
+                                    <strong>Order ${index + 1}:</strong>
+                                    <pre>${JSON.stringify(doc, null, 2)}</pre>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                content.innerHTML = html || '<div class="empty-state">No data found in any collection</div>';
+            } catch (error) {
+                content.innerHTML = `<div class="error">Error loading data: ${error.message}</div>`;
+            }
+        }
+
+        // Load all data on page load
+        window.addEventListener('load', () => {
+            loadAll();
+        });
+    </script>
+</body>
+</html>
