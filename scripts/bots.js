@@ -44,24 +44,41 @@ function makeBotDraggable(bot) {
     let xOffset = 0;
     let yOffset = 0;
 
-    // Get initial position from CSS
-    const computedStyle = window.getComputedStyle(bot);
-    const right = parseInt(computedStyle.right);
-    const bottom = parseInt(computedStyle.bottom);
+    // Check if there's a saved position in localStorage
+    const savedPosition = localStorage.getItem('botPosition');
     
-    // Convert to left/top positioning
-    bot.style.right = 'auto';
-    bot.style.bottom = 'auto';
-    const initialLeft = window.innerWidth - right - bot.offsetWidth;
-    const initialTop = window.innerHeight - bottom - bot.offsetHeight;
-    bot.style.left = `${initialLeft}px`;
-    bot.style.top = `${initialTop}px`;
-    
-    // Set initial offset to current position
-    xOffset = initialLeft;
-    yOffset = initialTop;
-    currentX = initialLeft;
-    currentY = initialTop;
+    if (savedPosition) {
+        // Use saved position
+        const { left, top } = JSON.parse(savedPosition);
+        bot.style.right = 'auto';
+        bot.style.bottom = 'auto';
+        bot.style.left = `${left}px`;
+        bot.style.top = `${top}px`;
+        
+        xOffset = left;
+        yOffset = top;
+        currentX = left;
+        currentY = top;
+    } else {
+        // Get initial position from CSS
+        const computedStyle = window.getComputedStyle(bot);
+        const right = parseInt(computedStyle.right);
+        const bottom = parseInt(computedStyle.bottom);
+        
+        // Convert to left/top positioning
+        bot.style.right = 'auto';
+        bot.style.bottom = 'auto';
+        const initialLeft = window.innerWidth - right - bot.offsetWidth;
+        const initialTop = window.innerHeight - bottom - bot.offsetHeight;
+        bot.style.left = `${initialLeft}px`;
+        bot.style.top = `${initialTop}px`;
+        
+        // Set initial offset to current position
+        xOffset = initialLeft;
+        yOffset = initialTop;
+        currentX = initialLeft;
+        currentY = initialTop;
+    }
 
     bot.addEventListener('mousedown', dragStart);
     document.addEventListener('mousemove', drag);
@@ -104,6 +121,18 @@ function makeBotDraggable(bot) {
                 currentY = e.clientY - initialY;
             }
 
+            // Get bot dimensions
+            const botWidth = bot.offsetWidth;
+            const botHeight = bot.offsetHeight;
+            
+            // Get viewport dimensions
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // Constrain to viewport boundaries
+            currentX = Math.max(0, Math.min(currentX, viewportWidth - botWidth));
+            currentY = Math.max(0, Math.min(currentY, viewportHeight - botHeight));
+
             xOffset = currentX;
             yOffset = currentY;
 
@@ -121,6 +150,12 @@ function makeBotDraggable(bot) {
             // Re-enable text selection
             document.body.style.userSelect = '';
             document.body.style.webkitUserSelect = '';
+            
+            // Save position to localStorage
+            localStorage.setItem('botPosition', JSON.stringify({
+                left: currentX,
+                top: currentY
+            }));
         }
     }
 

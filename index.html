@@ -122,6 +122,20 @@
         </div>
     </div>
 
+    <!-- Order Confirmation Modal -->
+    <div id="order-confirmation-modal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <h2 class="modal-title">Confirm Your Order</h2>
+            <div id="order-summary" style="margin: 2rem 0;">
+                <!-- Order summary will be populated here -->
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" onclick="closeOrderConfirmation()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="confirmOrder()">Confirm & Place Order</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script src="scripts/bots.js"></script>
     <script>

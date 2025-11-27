@@ -46,25 +46,55 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/shopping_
     console.log('Connected to MongoDB');
 }).catch(err => console.error('MongoDB connection error:', err));
 
-// Nodemailer Transporter (Ethereal for testing)
+// Nodemailer Transporter
 let transporter;
-nodemailer.createTestAccount().then(account => {
+
+// Check if Gmail credentials are provided
+if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    // Use Gmail for real emails
     transporter = nodemailer.createTransport({
-        host: account.smtp.host,
-        port: account.smtp.port,
-        secure: account.smtp.secure,
+        service: 'gmail',
         auth: {
-            user: account.user,
-            pass: account.pass
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD
         }
     });
-    console.log('Ethereal Email configured');
-}).catch(err => console.error('Failed to create test account:', err));
+    console.log('Gmail SMTP configured for sending real emails');
+} else {
+    // Fallback to Ethereal for testing
+    console.log('Gmail credentials not found, using Ethereal test email...');
+    nodemailer.createTestAccount().then(account => {
+        transporter = nodemailer.createTransport({
+            host: account.smtp.host,
+            port: account.smtp.port,
+            secure: account.smtp.secure,
+            auth: {
+                user: account.user,
+                pass: account.pass
+            }
+        });
+        console.log('Ethereal Email configured (test mode)');
+    }).catch(err => console.error('Failed to create test account:', err));
+}
 
 // Routes
 const User = require('./models/User');
 const Product = require('./models/Product');
 const Order = require('./models/Order');
+
+// Multer configuration for file uploads
+const upload = multer({ dest: 'uploads/' });
+
+// Admin Middleware
+function isAdmin(req, res, next) {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+}
 
 
 // Passport Google OAuth Strategy
@@ -217,12 +247,18 @@ app.get('/api/auth/status', (req, res) => {
 });
 
 // Logout
-app.post('/api/logout', (req, res) => {
+app.post('/api/logout', (req, res, next) => {
     req.logout((err) => {
         if (err) {
             return res.status(500).json({ error: 'Logout failed' });
         }
-        res.json({ message: 'Logged out successfully' });
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Session destruction error:', err);
+            }
+            res.clearCookie('connect.sid');
+            res.json({ message: 'Logged out successfully' });
+        });
     });
 });
 
@@ -377,6 +413,95 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Admin: Create new product
+app.post('/api/admin/products', isAdmin, upload.single('imageFile'), async (req, res) => {
+    try {
+        console.log('Received product creation request:', req.body);
+        console.log('File:', req.file);
+        
+        const { name, price, description, imageUrl, stock } = req.body;
+        
+        let finalImage = '';
+        if (req.file) {
+            // If file uploaded, use the file path
+            // Normalize path to be URL-friendly (forward slashes)
+            finalImage = '/uploads/' + req.file.filename;
+        } else if (imageUrl) {
+            // If URL provided, use it
+            finalImage = imageUrl;
+        } else {
+            // Default image or error
+            finalImage = 'https://via.placeholder.com/500?text=No+Image';
+        }
+
+        // Generate unique product ID
+        const products = await Product.find();
+        const maxId = products.length > 0 ? Math.max(...products.map(p => p.id)) : 0;
+        const newId = maxId + 1;
+
+        const product = new Product({
+            id: newId,
+            name,
+            price: parseFloat(price),  // Ensure it's a number
+            description,
+            image: finalImage,
+            stock: parseInt(stock) || 0  // Ensure it's a number
+        });
+
+        console.log('Attempting to save product:', product);
+        await product.save();
+        console.log('Product saved successfully:', product);
+        res.json({ message: 'Product created successfully', product });
+    } catch (err) {
+        console.error('Error creating product:', err);
+        console.error('Error stack:', err.stack);
+        console.error('Error message:', err.message);
+        res.status(500).json({ error: 'Server error: ' + err.message });
+    }
+});
+
+// Admin: Update product stock
+app.patch('/api/admin/products/:productId/stock', isAdmin, async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const { stock } = req.body;
+
+        const product = await Product.findOne({ id: parseInt(productId) });
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        product.stock = parseInt(stock);
+        await product.save();
+
+        res.json({ message: 'Stock updated successfully', product });
+    } catch (err) {
+        console.error('Error updating stock:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Admin: Delete product
+app.delete('/api/admin/products/:productId', isAdmin, async (req, res) => {
+    try {
+        const { productId } = req.params;
+
+        const product = await Product.findOne({ id: parseInt(productId) });
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        await Product.deleteOne({ id: parseInt(productId) });
+        res.json({ message: 'Product deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting product:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Purchase Endpoint
 app.post('/api/purchase', async (req, res) => {
     try {
@@ -410,8 +535,122 @@ app.post('/api/purchase', async (req, res) => {
         product.stock--;
         await product.save();
 
-        res.json({ message: 'Purchase successful', productName: product.name });
+        res.json({ message: 'Added to cart successfully', productName: product.name });
     } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Confirm Order and Send Email
+app.post('/api/orders/:orderId/confirm', async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        // Get user and product details
+        const user = await User.findOne({ username: order.username });
+        const product = await Product.findOne({ id: order.productId });
+
+        if (!user || !product) {
+            return res.status(404).json({ error: 'User or product not found' });
+        }
+
+        // Send order confirmation email
+        if (user.email && transporter) {
+            try {
+                const orderDate = new Date(order.date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const confirmationEmail = await transporter.sendMail({
+                    from: '"ModernShop" <noreply@modernshop.com>',
+                    to: user.email,
+                    subject: `Order Confirmation - ${product.name}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px;">
+                            <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+                                <h1 style="color: #667eea; margin: 0 0 20px 0; font-size: 28px;">🎉 Order Confirmed!</h1>
+                                
+                                <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${user.displayName || user.username},</p>
+                                
+                                <p style="font-size: 16px; color: #333; line-height: 1.6;">Thank you for your purchase! Your order has been confirmed.</p>
+                                
+                                <div style="background: #f7f7f7; border-left: 4px solid #667eea; padding: 20px; margin: 30px 0; border-radius: 8px;">
+                                    <h2 style="color: #667eea; margin: 0 0 15px 0; font-size: 20px;">Order Details</h2>
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <tr>
+                                            <td style="padding: 10px 0; color: #666; font-weight: 600;">Product:</td>
+                                            <td style="padding: 10px 0; color: #333; font-weight: bold;">${product.name}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px 0; color: #666; font-weight: 600;">Price:</td>
+                                            <td style="padding: 10px 0; color: #333;">$${product.price.toFixed(2)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px 0; color: #666; font-weight: 600;">Order Date:</td>
+                                            <td style="padding: 10px 0; color: #333;">${orderDate}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px 0; color: #666; font-weight: 600;">Order ID:</td>
+                                            <td style="padding: 10px 0; color: #333; font-family: monospace;">${order._id}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                
+                                <div style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                    <p style="margin: 0; color: #2e7d32; font-weight: 600;">✓ Your order is being processed</p>
+                                </div>
+                                
+                                <p style="font-size: 14px; color: #666; line-height: 1.6; margin-top: 30px;">
+                                    You can view your order details anytime by visiting your 
+                                    <a href="http://localhost:3000/cart.html" style="color: #667eea; text-decoration: none; font-weight: 600;">cart page</a>.
+                                </p>
+                                
+                                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                                
+                                <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">
+                                    This is an automated email. Please do not reply to this message.
+                                </p>
+                            </div>
+                        </div>
+                    `
+                });
+
+                // For Ethereal test emails, log the preview URL
+                const etherealUrl = nodemailer.getTestMessageUrl(confirmationEmail);
+                if (etherealUrl) {
+                    console.log(`Test email preview: ${etherealUrl}`);
+                    // Auto-open test email in browser
+                    const { exec } = require('child_process');
+                    exec(`start ${etherealUrl}`);
+                } else {
+                    // Real email sent via Gmail
+                    console.log(`Order confirmation email sent to ${user.email}`);
+                }
+
+                // Delete the order from cart after email is sent
+                await Order.findByIdAndDelete(orderId);
+
+                res.json({ message: 'Order confirmed and email sent', productName: product.name });
+            } catch (emailErr) {
+                console.error('Failed to send confirmation email:', emailErr);
+                res.status(500).json({ error: 'Failed to send confirmation email' });
+            }
+        } else {
+            // Delete order even if no email (for users without email)
+            await Order.findByIdAndDelete(orderId);
+            res.json({ message: 'Order confirmed (no email sent - missing user email or transporter)' });
+        }
+    } catch (err) {
+        console.error('Error confirming order:', err);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -536,19 +775,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
     }
 });
 
-// Admin Middleware
-function isAdmin(req, res, next) {
-    if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-    }
-    if (!req.user.isAdmin) {
-        return res.status(403).json({ error: 'Admin access required' });
-    }
-    next();
-}
-
-// Multer configuration for file uploads
-const upload = multer({ dest: 'uploads/' });
+// (Multer and isAdmin middleware moved to top of file after model imports)
 
 // Helper function to generate username from email
 function generateUsername(email) {

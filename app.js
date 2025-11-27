@@ -147,9 +147,8 @@ class ShoppingCartApp {
                 this.cartCount++;
                 this.updateCartCount();
                 
-                // Show success modal
-                document.getElementById('purchase-product-name').textContent = `You've successfully purchased ${data.productName}!`;
-                document.getElementById('purchase-success-modal').style.display = 'flex';
+                // Show success toast
+                this.showToast(`Added ${data.productName} to cart!`);
                 
                 await this.fetchProducts(); // Refresh stock
                 this.renderProducts();
@@ -163,7 +162,7 @@ class ShoppingCartApp {
                 }
             }
         } catch (err) {
-            this.showToast('Purchase failed. Try again.');
+            this.showToast('Failed to add to cart. Try again.');
         }
     }
 
@@ -259,3 +258,57 @@ class ShoppingCartApp {
 
 // Initialize app and make it available globally for inline handlers
 window.app = new ShoppingCartApp();
+
+// Order confirmation functions
+function closeOrderConfirmation() {
+    document.getElementById('order-confirmation-modal').style.display = 'none';
+    window.pendingOrder = null;
+}
+
+async function confirmOrder() {
+    if (!window.pendingOrder) {
+        window.app.showToast('No pending order');
+        return;
+    }
+
+    const { productId, productName } = window.pendingOrder;
+    const username = window.app.currentUser;
+
+    // Close confirmation modal
+    document.getElementById('order-confirmation-modal').style.display = 'none';
+
+    try {
+        const response = await fetch('/api/purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, productId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            window.app.cartCount++;
+            window.app.updateCartCount();
+            
+            // Show success modal
+            document.getElementById('purchase-product-name').textContent = `You've successfully purchased ${productName}! Check your email for order confirmation.`;
+            document.getElementById('purchase-success-modal').style.display = 'flex';
+            
+            await window.app.fetchProducts(); // Refresh stock
+            window.app.renderProducts();
+            
+            // Clear pending order
+            window.pendingOrder = null;
+        } else {
+            if (response.status === 403) {
+                document.getElementById('verification-modal').style.display = 'flex';
+            } else if (response.status === 400 && data.error.includes('only buy one item')) {
+                document.getElementById('purchase-limit-modal').style.display = 'flex';
+            } else {
+                window.app.showToast(data.error);
+            }
+        }
+    } catch (err) {
+        window.app.showToast('Purchase failed. Try again.');
+    }
+}

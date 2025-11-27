@@ -60,6 +60,18 @@
         </div>
     </div>
 
+    <!-- Order Confirmation Modal -->
+    <div id="confirm-order-modal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <h2 class="modal-title">Confirm Your Order</h2>
+            <div id="confirm-order-summary" style="margin: 2rem 0;"></div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" onclick="closeConfirmOrderModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="finalizeOrder()">Confirm & Send Email</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast" id="toast">Item removed from cart</div>
 
     <script>
@@ -98,35 +110,106 @@
                 const emptyCart = document.getElementById('empty-cart');
 
                 if (data.order) {
-                    // Show cart item
+                    window.currentOrder = data.order;
+                    
+                    const productResponse = await fetch('/api/products');
+                    const products = await productResponse.json();
+                    const product = products.find(p => p.id === data.order.productId);
+                    window.currentProduct = product;
+                    
                     container.innerHTML = `
                         <div class="cart-item" style="background: var(--surface); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                                 <div>
                                     <h3 style="font-size: 1.5rem; margin: 0 0 0.5rem 0; color: white;">${data.order.productName}</h3>
-                                    <p style="color: var(--text-light); margin: 0;">Ordered on ${new Date(data.order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    <p style="color: var(--text-light); margin: 0;">Added on ${new Date(data.order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    ${product ? `<p style="color: var(--primary); font-weight: 700; font-size: 1.2rem; margin-top: 1rem;">$${product.price.toFixed(2)}</p>` : ''}
                                 </div>
                                 <button class="modal-btn modal-btn-danger" onclick="showRemoveModal('${data.order._id}')" style="margin: 0;">
                                     Remove
                                 </button>
                             </div>
                         </div>
-                        <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 1.5rem; margin-top: 2rem;">
+                        <button onclick="showConfirmOrderModal()" style="width: 100%; padding: 1.5rem; background: var(--gradient-main); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-bottom: 2rem; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);">
+                            📧 Confirm Order & Send Email
+                        </button>
+                        <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 1.5rem;">
                             <p style="margin: 0; color: var(--primary); font-weight: 600;">
-                                ℹ️ Note: You can only purchase one item total. Remove this item to purchase a different product.
+                                ℹ️ Click "Confirm Order" to finalize your purchase and receive an email confirmation.
                             </p>
                         </div>
                     `;
                     container.style.display = 'block';
                     emptyCart.style.display = 'none';
                 } else {
-                    // Show empty cart
                     container.style.display = 'none';
                     emptyCart.style.display = 'block';
                 }
             } catch (err) {
                 console.error('Failed to load cart:', err);
                 showToast('Failed to load cart');
+            }
+        }
+
+        function showConfirmOrderModal() {
+            if (!window.currentOrder || !window.currentProduct) {
+                showToast('Order details not found');
+                return;
+            }
+
+            const product = window.currentProduct;
+            const summaryDiv = document.getElementById('confirm-order-summary');
+            summaryDiv.innerHTML = `
+                <div style="text-align: center;">
+                    <img src="${product.image}" alt="${product.name}" 
+                         style="width: 100%; max-width: 300px; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <h3 style="margin: 0 0 0.5rem 0; color: white; font-size: 1.5rem;">${product.name}</h3>
+                    <p style="color: var(--text-light); margin: 0 0 1rem 0; line-height: 1.6;">${product.description}</p>
+                    <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--text-light); font-weight: 600;">Total Price:</span>
+                            <span style="color: var(--primary); font-size: 1.8rem; font-weight: 900;">$${product.price.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem; opacity: 0.8;">
+                        📧 A confirmation email will be sent to your registered email address.
+                    </p>
+                </div>
+            `;
+            
+            document.getElementById('confirm-order-modal').style.display = 'flex';
+        }
+
+        function closeConfirmOrderModal() {
+            document.getElementById('confirm-order-modal').style.display = 'none';
+        }
+
+        async function finalizeOrder() {
+            if (!window.currentOrder) {
+                showToast('No order to confirm');
+                return;
+            }
+
+            closeConfirmOrderModal();
+
+            try {
+                const response = await fetch(`/api/orders/${window.currentOrder._id}/confirm`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('Order confirmed! Check your email.');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showToast(data.error || 'Failed to confirm order');
+                }
+            } catch (err) {
+                console.error('Failed to confirm order:', err);
+                showToast('Failed to confirm order');
             }
         }
 
@@ -174,7 +257,6 @@
             }, 3000);
         }
 
-        // Initialize
         checkAuth();
     </script>
     <script src="scripts/bots.js"></script>

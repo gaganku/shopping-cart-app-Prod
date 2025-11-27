@@ -557,6 +557,109 @@
             }
         }
 
+        /* Tab Styles */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .tab-btn.active {
+            background: var(--gradient-main);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .product-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .product-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
     </style>
     <script src="scripts/bots.js"></script>
 </head>
@@ -573,6 +676,7 @@
         <div class="sphere-3d"></div>
     </div>
 
+    <div id="admin-content" style="display: none;">
     <header style="padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; z-index: 10;">
         <a href="index.html" style="font-size: 1.5rem; font-weight: 800; color: white; text-decoration: none; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ModernShop</a>
         <a href="index.html" style="color: var(--text-light); text-decoration: none; font-weight: 600; transition: color 0.2s;">Exit Admin</a>
@@ -580,82 +684,148 @@
 
     <div class="admin-container" style="margin-top: 60px;">
         <div class="admin-header">
-            <h1>🛡️ Admin Dashboard</h1>
-            <p>Manage users and bulk upload accounts</p>
+            <h1>Admin Dashboard</h1>
+            <p style="color: var(--text-light); margin: 0;">Manage users, products, and system settings</p>
         </div>
 
-        <!-- Bulk Upload Section -->
-        <div class="admin-section">
-            <h2>📤 Bulk User Upload</h2>
-            <p>Upload an Excel file (.xlsx) with a column named "email" containing user email addresses.</p>
-            
-            <div class="upload-area">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary); margin-bottom: 1rem;">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <p><strong>Choose an Excel file</strong></p>
-                <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
-                <button class="upload-btn" onclick="document.getElementById('file-input').click()">Select File</button>
-                <p id="file-name" style="margin-top: 1rem; color: var(--text-light);"></p>
-            </div>
-
-            <button id="upload-btn" class="upload-btn" style="width: 100%; margin-top: 1rem; display: none;">Upload Users</button>
-
-            <!-- Progress Bar -->
-            <div id="upload-progress" style="display: none; margin-top: 1rem;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="font-weight: 600; color: var(--text);">Uploading...</span>
-                    <span id="progress-percent" style="font-weight: 600; color: var(--primary);">0%</span>
-                </div>
-                <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                    <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s ease;"></div>
-                </div>
-                <p id="progress-status" style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.875rem;">Preparing upload...</p>
-            </div>
-
-            <div id="upload-results" class="results" style="display: none;"></div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('users')">User Management</button>
+            <button class="tab-btn" onclick="switchTab('products')">Product Management</button>
         </div>
 
-        <!-- Users List Section -->
-        <div class="admin-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>👥 All Users</h2>
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    <input type="text" id="search-input" placeholder="Search users..." 
-                        style="padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; width: 250px;">
-                    <div>
-                        <button id="delete-selected-btn" class="upload-btn" style="background: #dc2626; display: none; margin-right: 0.5rem; margin-top: 0;">Delete Selected</button>
-                        <button id="refresh-btn" class="upload-btn" style="margin-top: 0;">Refresh List</button>
+        <!-- Users Tab -->
+        <div id="users-tab" class="tab-content active">
+            <!-- Bulk Upload Section -->
+            <div class="admin-section">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Bulk User Upload
+                </h2>
+                <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                    <input type="file" id="file-input" accept=".xlsx, .xls" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <p style="margin: 0; font-size: 1.1rem; font-weight: 600;">Click to select Excel file</p>
+                    <p style="margin: 0.5rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">Supported formats: .xlsx, .xls</p>
+                    <p id="file-name" style="margin-top: 1rem; color: var(--accent); font-weight: 600;"></p>
+                </div>
+                
+                <button id="upload-btn" class="upload-btn" style="display: none; margin: 1.5rem auto 0;">Start Upload</button>
+
+                <!-- Progress Bar -->
+                <div id="upload-progress" style="display: none; margin-top: 2rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span id="progress-status" style="color: var(--text-light);">Preparing upload...</span>
+                        <span id="progress-percent" style="color: var(--accent); font-weight: 700;">0%</span>
+                    </div>
+                    <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                        <div id="progress-bar" style="height: 100%; width: 0%; background: var(--gradient-main); transition: width 0.3s ease;"></div>
                     </div>
                 </div>
+
+                <div id="upload-results" style="display: none; margin-top: 2rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px;"></div>
             </div>
-            
-            <div class="table-responsive">
-                <table class="users-table" id="users-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">
-                                <input type="checkbox" id="select-all" style="cursor: pointer;">
-                            </th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Role</th>
-                            <th>Admin Verified</th>
-                            <th>Created</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-tbody">
-                        <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading...</td></tr>
-                    </tbody>
-                </table>
+
+            <!-- User List Section -->
+            <div class="admin-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        Registered Users
+                    </h2>
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="text" id="search-input" placeholder="Search users..." class="form-input" style="width: 250px;">
+                        <button id="refresh-btn" class="upload-btn" style="margin: 0; padding: 0.5rem 1rem;">Refresh</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <button id="delete-selected-btn" class="upload-btn" style="display: none; background: var(--danger); margin: 0; padding: 0.5rem 1rem;">Delete Selected</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" id="select-all"></th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Role</th>
+                                <th>Admin Access</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <!-- Users will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Tab -->
+        <div id="products-tab" class="tab-content">
+            <div class="admin-section">
+                <h2>Add New Product</h2>
+                <form id="add-product-form" onsubmit="handleAddProduct(event)">
+                    <div class="form-group">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" id="product-name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Price ($)</label>
+                        <input type="number" id="product-price" class="form-input" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea id="product-desc" class="form-input" rows="3" required></textarea>
+                    </div>
+                    
+                    <!-- Image Option Toggle -->
+                    <div class="form-group">
+                        <label class="form-label">Product Image</label>
+                        <div style="display: flex; gap: 2rem; margin-bottom: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="image-option" value="url" checked onchange="toggleImageInput()">
+                                <span style="color: var(--text-light);">Use Image URL</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="image-option" value="upload" onchange="toggleImageInput()">
+                                <span style="color: var(--text-light);">Upload Image File</span>
+                            </label>
+                        </div>
+                        
+                        <!-- URL Input (default) -->
+                        <div id="url-input-section">
+                            <input type="url" id="product-image-url" class="form-input" placeholder="https://example.com/image.jpg">
+                        </div>
+                        
+                        <!-- File Upload Input (hidden by default) -->
+                        <div id="file-input-section" style="display: none;">
+                            <input type="file" id="product-image-file" class="form-input" accept="image/*">
+                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem;">Supported: JPG, PNG, GIF, WebP</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Initial Stock</label>
+                        <input type="number" id="product-stock" class="form-input" value="0" min="0" required>
+                    </div>
+                    <button type="submit" class="upload-btn" style="width: 100%; margin-top: 1rem;">Create Product</button>
+                </form>
+            </div>
+
+            <div class="admin-section">
+                <h2>Current Products</h2>
+                <div id="products-list">
+                    <!-- Products will be populated here -->
+                </div>
             </div>
         </div>
 
         <a href="index.html" style="display: inline-block; margin-top: 1rem; color: var(--primary); text-decoration: none;">← Back to Shop</a>
+    </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -681,15 +851,69 @@
         </div>
     </div>
 
+    <!-- Update Stock Modal -->
+    <div id="stock-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Update Stock</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="new-stock-input">New Stock Quantity</label>
+                    <input type="number" id="new-stock-input" class="form-input" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="closeStockModal()">Cancel</button>
+                <button class="modal-btn" style="background: var(--primary); color: white;" onclick="confirmStockUpdate()">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Product Modal -->
+    <div id="delete-product-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--danger);">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h3>Delete Product</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this product?</p>
+                <p style="color: var(--text-light); font-size: 0.875rem;">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="closeDeleteProductModal()">Cancel</button>
+                <button class="modal-btn" style="background: var(--danger); color: white;" onclick="confirmDeleteProduct()">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Check if user is admin
         async function checkAdmin() {
-            const response = await fetch('/api/auth/status');
-            const data = await response.json();
-            if (!data.authenticated || !data.user.isAdmin) {
-                alert('Access Denied: Admins only');
-                window.location.href = '/index.html';
-                return;
+            try {
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+
+                if (!data.authenticated) {
+                    document.body.innerHTML = '<h1 style="color: white; padding: 2rem;">Not Authenticated. Please <a href="login.html">Login</a></h1>';
+                    return;
+                }
+                
+                if (!data.user.isAdmin) {
+                    document.body.innerHTML = '<h1 style="color: white; padding: 2rem;">Access Denied. User is not an admin. <a href="index.html">Go Back</a></h1>';
+                    return;
+                }
+
+                // Show content if authenticated
+                document.getElementById('admin-content').style.display = 'block';
+            } catch (err) {
+                console.error('Auth check failed:', err);
+                document.body.innerHTML = `<h1 style="color: white; padding: 2rem;">Error checking auth: ${err.message}</h1>`;
             }
         }
 
@@ -739,6 +963,9 @@
             // Simulate progress based on time (since we can't track individual user processing)
             let currentProgress = 0;
             const progressInterval = setInterval(() => {
+                // Estimate processed count
+                let estimatedProcessed = 0;
+                
                 if (totalUsers > 0) {
                     const elapsed = Date.now() - startTime;
                     // Estimate: ~1000ms per user (slower for better visual)
@@ -749,10 +976,9 @@
                         currentProgress = Math.min(currentProgress + 2, targetProgress);
                     }
                     
+                    estimatedProcessed = Math.floor((currentProgress / 100) * totalUsers);
                     document.getElementById('progress-bar').style.width = currentProgress + '%';
                     document.getElementById('progress-percent').textContent = Math.round(currentProgress) + '%';
-                    
-                    const estimatedProcessed = Math.floor((currentProgress / 100) * totalUsers);
                     document.getElementById('progress-status').textContent = 
                         `Processing users... ${estimatedProcessed}/${totalUsers}`;
                 } else {
@@ -763,79 +989,74 @@
                 }
             }, 100);
 
-            // Handle completion
-            xhr.addEventListener('load', () => {
+            xhr.open('POST', '/api/admin/bulk-upload');
+            
+            xhr.onload = function() {
                 clearInterval(progressInterval);
-                
-                // Show 100% completion
                 document.getElementById('progress-bar').style.width = '100%';
                 document.getElementById('progress-percent').textContent = '100%';
-                document.getElementById('progress-status').textContent = 
-                    totalUsers > 0 ? `Completed ${totalUsers}/${totalUsers} users` : 'Processing complete';
-                
-                setTimeout(() => {
-                    if (xhr.status === 200) {
-                        const data = JSON.parse(xhr.responseText);
-                        
-                        // Hide progress bar
-                        document.getElementById('upload-progress').style.display = 'none';
-                        
-                        // Show results
-                        displayResults(data.results);
-                        loadUsers(); // Refresh user list
-                        
-                        // Reset file input
-                        fileInput.value = '';
-                        document.getElementById('file-name').textContent = '';
-                        
-                        // Reset progress
-                        document.getElementById('progress-bar').style.width = '0%';
-                        document.getElementById('progress-percent').textContent = '0%';
-                        document.getElementById('progress-status').textContent = 'Preparing upload...';
-                    } else {
-                        const data = JSON.parse(xhr.responseText);
-                        alert(data.error || 'Upload failed');
-                        document.getElementById('upload-progress').style.display = 'none';
-                        document.getElementById('upload-btn').style.display = 'block';
+                document.getElementById('progress-status').textContent = 'Upload Complete!';
+
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    
+                    // Show results
+                    const resultsDiv = document.getElementById('upload-results');
+                    resultsDiv.style.display = 'block';
+                    
+                    let html = `<h3 style="margin-top: 0; color: var(--success);">Upload Successful!</h3>`;
+                    html += `<p>Successfully added: <strong>${data.success.length}</strong> users</p>`;
+                    
+                    if (data.failed.length > 0) {
+                        html += `<p style="color: var(--danger);">Failed: <strong>${data.failed.length}</strong> users</p>`;
+                        html += `<div style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-top: 1rem;">`;
+                        data.failed.forEach(fail => {
+                            html += `<div style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                ${fail.email}: ${fail.reason}
+                            </div>`;
+                        });
+                        html += `</div>`;
                     }
-                }, 800);
-            });
 
-            // Handle errors
-            xhr.addEventListener('error', () => {
+                    resultsDiv.innerHTML = html;
+                    loadUsers(); // Refresh user list
+                } else {
+                    alert('Upload failed');
+                    document.getElementById('upload-btn').style.display = 'block';
+                    document.getElementById('upload-progress').style.display = 'none';
+                }
+            };
+
+            xhr.onerror = function() {
                 clearInterval(progressInterval);
-                alert('Server error during upload');
-                document.getElementById('upload-progress').style.display = 'none';
+                alert('Upload error');
                 document.getElementById('upload-btn').style.display = 'block';
-            });
+                document.getElementById('upload-progress').style.display = 'none';
+            };
 
-            // Send request
-            xhr.open('POST', '/api/admin/bulk-upload');
             xhr.send(formData);
         });
 
-        // Display upload results
-        function displayResults(results) {
-            const resultsDiv = document.getElementById('upload-results');
-            resultsDiv.style.display = 'block';
-            
-            let html = '<h3>Upload Results</h3>';
-            
-            if (results.success.length > 0) {
-                html += `<p><strong>✅ Successfully created ${results.success.length} users:</strong></p>`;
-                results.success.forEach(user => {
-                    html += `<div class="success-item">• ${user.email} → ${user.username}</div>`;
-                });
+        // Tab Switching
+        function switchTab(tabName) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(tabName)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            // Load data if needed
+            if (tabName === 'products') {
+                loadProducts();
             }
-            
-            if (results.failed.length > 0) {
-                html += `<p style="margin-top: 1rem;"><strong>❌ Failed ${results.failed.length} users:</strong></p>`;
-                results.failed.forEach(item => {
-                    html += `<div class="error-item">• ${item.email}: ${item.reason}</div>`;
-                });
-            }
-            
-            resultsDiv.innerHTML = html;
         }
 
         // Load users
@@ -853,37 +1074,24 @@
                         const isCurrentAdmin = user.username === 'admin'; // Prevent deleting main admin
                         
                         row.innerHTML = `
+                            <td><input type="checkbox" class="user-checkbox" data-user-id="${user._id}" data-username="${user.username}" data-email="${user.email}" ${isCurrentAdmin ? 'disabled' : ''}></td>
                             <td>
-                                <input type="checkbox" class="user-checkbox" 
-                                    data-user-id="${user._id}" 
-                                    data-username="${user.username}"
-                                    data-email="${user.email || 'N/A'}"
-                                    ${isCurrentAdmin ? 'disabled title="Cannot delete main admin"' : ''}
-                                    style="cursor: ${isCurrentAdmin ? 'not-allowed' : 'pointer'};">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.9rem;">${user.username.charAt(0).toUpperCase()}</div>
+                                    ${user.username}
+                                </div>
                             </td>
-                            <td>${user.username}</td>
                             <td>${user.email || 'N/A'}</td>
                             <td>
-                                ${user.isVerified 
-                                    ? '<span class="badge badge-verified">Verified</span>' 
-                                    : '<span class="badge badge-unverified">Unverified</span>'}
+                                <span class="status-badge ${user.isVerified ? 'status-verified' : 'status-pending'}">
+                                    ${user.isVerified ? 'Verified' : 'Pending'}
+                                </span>
                             </td>
-                            <td>
-                                ${user.isAdmin 
-                                    ? '<span class="badge badge-admin">Admin</span>' 
-                                    : '<span class="badge badge-user">User</span>'}
-                            </td>
-                            <td>
-                                ${user.isAdminVerified
-                                    ? '<span class="badge badge-verified">Approved</span>'
-                                    : '<span class="badge badge-unverified" style="background: rgba(251, 113, 133, 0.2); color: #fb7185; border-color: rgba(251, 113, 133, 0.3);">Pending</span>'}
-                            </td>
+                            <td>${user.isAdmin ? 'Admin' : 'User'}</td>
+                            <td>${user.isAdmin ? 'Yes' : 'No'}</td>
                             <td>${new Date(user.createdAt).toLocaleDateString()}</td>
                             <td>
-                                <button class="upload-btn" style="padding: 0.25rem 0.75rem; font-size: 0.75rem; margin: 0; background: ${user.isAdminVerified ? 'rgba(255,255,255,0.1)' : 'var(--success)'}; border: 1px solid rgba(255,255,255,0.1);" 
-                                    onclick="toggleVerification('${user._id}', ${user.isAdminVerified})">
-                                    ${user.isAdminVerified ? 'Revoke' : 'Verify'}
-                                </button>
+                                <button class="upload-btn" style="width: auto; margin: 0; padding: 0.25rem 0.75rem; font-size: 0.8rem;" onclick="alert('Edit feature coming soon')">Edit</button>
                             </td>
                         `;
                         tbody.appendChild(row);
@@ -904,27 +1112,6 @@
                 }
             } catch (err) {
                 console.error('Error loading users:', err);
-            }
-        }
-
-        // Toggle User Verification
-        async function toggleVerification(userId, currentStatus) {
-            try {
-                const response = await fetch('/api/admin/verify-user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, verify: !currentStatus })
-                });
-
-                if (response.ok) {
-                    loadUsers(); // Refresh list
-                } else {
-                    const data = await response.json();
-                    alert(data.error || 'Failed to update verification status');
-                }
-            } catch (err) {
-                console.error('Error updating status:', err);
-                alert('Server error');
             }
         }
 
@@ -1058,6 +1245,197 @@
                 }
             });
         });
+
+        // Product Management
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/products');
+                const products = await response.json();
+                
+                const container = document.getElementById('products-list');
+                container.innerHTML = '';
+
+                products.forEach(product => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `
+                        <img src="${product.image}" alt="${product.name}" class="product-img">
+                        <div class="product-info">
+                            <h3 class="product-title">${product.name}</h3>
+                            <p class="product-price">$${product.price.toFixed(2)}</p>
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Stock: ${product.stock}</p>
+                            <button class="upload-btn" style="width: auto; margin: 0; padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="openStockModal('${product.id}', ${product.stock})">Update Stock</button>
+                            <button class="upload-btn" style="width: auto; margin: 0; padding: 0.5rem 1rem; font-size: 0.9rem; background: var(--danger);" onclick="openDeleteProductModal('${product.id}')">Delete</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error('Failed to load products:', err);
+            }
+        }
+
+        // Toggle between URL and file upload inputs
+        function toggleImageInput() {
+            const selectedOption = document.querySelector('input[name="image-option"]:checked').value;
+            const urlSection = document.getElementById('url-input-section');
+            const fileSection = document.getElementById('file-input-section');
+            
+            if (selectedOption === 'url') {
+                urlSection.style.display = 'block';
+                fileSection.style.display = 'none';
+                document.getElementById('product-image-file').value = ''; // Clear file input
+            } else {
+                urlSection.style.display = 'none';
+                fileSection.style.display = 'block';
+                document.getElementById('product-image-url').value = ''; // Clear URL input
+            }
+        }
+
+        async function handleAddProduct(e) {
+            e.preventDefault();
+            
+            const selectedOption = document.querySelector('input[name="image-option"]:checked').value;
+            const name = document.getElementById('product-name').value;
+            const price = parseFloat(document.getElementById('product-price').value);
+            const description = document.getElementById('product-desc').value;
+            const stock = parseInt(document.getElementById('product-stock').value);
+
+            try {
+                let response;
+                
+                if (selectedOption === 'upload') {
+                    // Handle file upload
+                    const fileInput = document.getElementById('product-image-file');
+                    if (!fileInput.files || fileInput.files.length === 0) {
+                        alert('Please select an image file');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    formData.append('price', price);
+                    formData.append('description', description);
+                    formData.append('stock', stock);
+                    formData.append('imageFile', fileInput.files[0]);
+
+                    response = await fetch('/api/admin/products', {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: formData
+                        // Don't set Content-Type header - browser will set it with boundary for multipart/form-data
+                    });
+                } else {
+                    // Handle URL
+                    const imageUrl = document.getElementById('product-image-url').value;
+                    if (!imageUrl) {
+                        alert('Please enter an image URL');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    formData.append('price', price);
+                    formData.append('description', description);
+                    formData.append('stock', stock);
+                    formData.append('imageUrl', imageUrl);
+
+                    response = await fetch('/api/admin/products', {
+                        method: 'POST',
+                        credentials: 'include',
+                        body: formData
+                    });
+                }
+
+                if (response.ok) {
+                    alert('Product created successfully!');
+                    document.getElementById('add-product-form').reset();
+                    toggleImageInput(); // Reset the toggle display
+                    loadProducts();
+                } else {
+                    const error = await response.json();
+                    alert('Failed to create product: ' + (error.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Error creating product:', err);
+                alert('Error creating product');
+            }
+        }
+
+        // Stock Update Modal Logic
+        let pendingProductId = null;
+
+        function openStockModal(productId, currentStock) {
+            pendingProductId = productId;
+            document.getElementById('new-stock-input').value = currentStock;
+            document.getElementById('stock-modal').classList.add('active');
+        }
+
+        function closeStockModal() {
+            document.getElementById('stock-modal').classList.remove('active');
+            pendingProductId = null;
+        }
+
+        async function confirmStockUpdate() {
+            if (!pendingProductId) return;
+
+            const stock = parseInt(document.getElementById('new-stock-input').value);
+            if (isNaN(stock) || stock < 0) {
+                alert('Invalid stock quantity');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/products/${pendingProductId}/stock`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stock })
+                });
+
+                if (response.ok) {
+                    closeStockModal();
+                    loadProducts();
+                } else {
+                    alert('Failed to update stock');
+                }
+            } catch (err) {
+                console.error('Error updating stock:', err);
+                alert('Error updating stock');
+            }
+        }
+
+        // Delete Product Modal Logic
+        let pendingDeleteProductId = null;
+
+        function openDeleteProductModal(productId) {
+            pendingDeleteProductId = productId;
+            document.getElementById('delete-product-modal').classList.add('active');
+        }
+
+        function closeDeleteProductModal() {
+            document.getElementById('delete-product-modal').classList.remove('active');
+            pendingDeleteProductId = null;
+        }
+
+        async function confirmDeleteProduct() {
+            if (!pendingDeleteProductId) return;
+
+            try {
+                const response = await fetch(`/api/admin/products/${pendingDeleteProductId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    closeDeleteProductModal();
+                    loadProducts();
+                } else {
+                    alert('Failed to delete product');
+                }
+            } catch (err) {
+                console.error('Error deleting product:', err);
+                alert('Error deleting product');
+            }
+        }
 
         // Initialize
         checkAdmin();
