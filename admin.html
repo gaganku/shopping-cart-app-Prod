@@ -892,6 +892,89 @@
         </div>
     </div>
 
+    <!-- Success Notification Toast -->
+    <div id="success-notification" class="notification-toast">
+        <div class="notification-content">
+            <svg class="notification-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <div class="notification-text">
+                <div class="notification-title">Success!</div>
+                <div class="notification-message" id="notification-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Notification Toast Styles */
+        .notification-toast {
+            position: fixed;
+            top: -100px;
+            right: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+            z-index: 10000;
+            min-width: 350px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .notification-toast.show {
+            top: 2rem;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-icon {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            padding: 6px;
+        }
+
+        .notification-text {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .notification-message {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Pulse animation */
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+            }
+            50% {
+                box-shadow: 0 10px 60px rgba(102, 126, 234, 0.6);
+            }
+        }
+
+        .notification-toast.show {
+            animation: pulse 2s ease-in-out;
+        }
+    </style>
+
     <script>
         // Check if user is admin
         async function checkAdmin() {
@@ -1275,6 +1358,20 @@
             }
         }
 
+        // Show custom notification
+        function showNotification(message) {
+            const notification = document.getElementById('success-notification');
+            const messageElement = document.getElementById('notification-message');
+            
+            messageElement.textContent = message;
+            notification.classList.add('show');
+            
+            // Auto-hide after 4 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
         // Toggle between URL and file upload inputs
         function toggleImageInput() {
             const selectedOption = document.querySelector('input[name="image-option"]:checked').value;
@@ -1348,7 +1445,8 @@
                 }
 
                 if (response.ok) {
-                    alert('Product created successfully!');
+                    const data = await response.json();
+                    showNotification(`Product "${name}" has been successfully created!`);
                     document.getElementById('add-product-form').reset();
                     toggleImageInput(); // Reset the toggle display
                     loadProducts();
