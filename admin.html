@@ -148,7 +148,6 @@
 
         tr:last-child td {
             border-bottom: none;
-            border: 1px solid rgba(74, 222, 128, 0.3);
         }
 
         .badge-user {
@@ -722,6 +721,7 @@
                     <table class="users-table">
                         <thead>
                             <tr>
+                                <th style="width: 30px;">#</th>
                                 <th style="width: 40px;"><input type="checkbox" id="select-all"></th>
                                 <th>Username</th>
                                 <th>Email</th>
@@ -984,6 +984,51 @@
         .notification-toast.show {
             animation: pulse 2s ease-in-out;
         }
+
+        /* Badge Styles */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .status-verified {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .status-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-role-admin {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .badge-role-user {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .badge-access-yes {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-access-no {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
     </style>
 
     <script>
@@ -1163,14 +1208,17 @@
                     const tbody = document.getElementById('users-tbody');
                     tbody.innerHTML = '';
 
-                    data.users.forEach(user => {
+                    data.users.forEach((user, index) => {
                         const row = document.createElement('tr');
                         const isCurrentAdmin = user.username === 'admin'; // Prevent deleting main admin
                         
                         row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>
+                                <input type="checkbox" class="user-checkbox" data-user-id="${user._id}" data-username="${user.username}" data-email="${user.email || ''}" ${isCurrentAdmin ? 'disabled' : ''}>
+                            </td>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 1rem;">
-                                    <input type="checkbox" class="user-checkbox" data-user-id="${user._id}" data-username="${user.username}" data-email="${user.email || ''}" ${isCurrentAdmin ? 'disabled' : ''}>
                                     <div class="user-avatar">${user.username.charAt(0).toUpperCase()}</div>
                                     <span>${user.username}</span>
                                 </div>
@@ -1193,7 +1241,7 @@
                             </td>
                             <td>${new Date(user.createdAt).toLocaleDateString()}</td>
                             <td>
-                                <button class="upload-btn" style="width: auto; margin: 0; padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                <button class="upload-btn" style="width: auto; margin: 0; padding: 0.25rem 0.75rem; font-size: 0.8rem;"
                                     onclick="openEditUserModal('${user._id}', '${user.username}', '${user.email || ''}', ${user.isVerified}, ${user.isAdmin})">
                                     Edit
                                 </button>
@@ -1227,7 +1275,7 @@
             
             if (checkedBoxes.length > 0) {
                 deleteBtn.style.display = 'inline-block';
-                deleteBtn.textContent = `Delete Selected (${checkedBoxes.length})`;
+                deleteBtn.textContent = 'Delete Selected (' + checkedBoxes.length + ')';
             } else {
                 deleteBtn.style.display = 'none';
             }
