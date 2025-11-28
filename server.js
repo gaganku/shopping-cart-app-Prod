@@ -420,34 +420,47 @@ app.post('/api/signup', async (req, res) => {
             email, 
             password,
             verificationToken,
-            isVerified: false,
+            isVerified: !transporter, // Auto-verify if no email configured
             lastLogin: new Date()
         });
         await user.save();
 
-        // Send verification email
-        const verificationLink = `https://shopping-cart-app-prod-3.onrender.com/api/verify?token=${verificationToken}`;
-        
-        const info = await transporter.sendMail({
-            from: '"ModernShop" <noreply@modernshop.com>',
-            to: email,
-            subject: 'Verify your account',
-            html: `<p>Please click the link below to verify your account:</p><a href="${verificationLink}">${verificationLink}</a>`
-        });
+        // Send verification email only if transporter is available
+        if (transporter) {
+            try {
+                const verificationLink = `https://shopping-cart-app-prod-3.onrender.com/api/verify?token=${verificationToken}`;
+                
+                const info = await transporter.sendMail({
+                    from: '"ModernShop" <noreply@modernshop.com>',
+                    to: email,
+                    subject: 'Verify your account',
+                    html: `<p>Please click the link below to verify your account:</p><a href="${verificationLink}">${verificationLink}</a>`
+                });
 
-        const etherealUrl = nodemailer.getTestMessageUrl(info);
-        console.log('Verification email sent: %s', etherealUrl);
-        
-        // Auto-open the Ethereal email in browser
-        if (etherealUrl) {
-            const { exec } = require('child_process');
-            exec(`start ${etherealUrl}`);
+                const etherealUrl = nodemailer.getTestMessageUrl(info);
+                console.log('Verification email sent: %s', etherealUrl);
+                
+                // Auto-open the Ethereal email in browser
+                if (etherealUrl) {
+                    const { exec } = require('child_process');
+                    exec(`start ${etherealUrl}`);
+                }
+            } catch (emailErr) {
+                console.error('Error sending verification email:', emailErr);
+                // Don't fail signup if email fails
+            }
+        } else {
+            console.log('Email not configured - user auto-verified');
         }
 
-        res.status(201).json({ message: 'User created. Please verify your email.' });
+        const message = transporter 
+            ? 'User created. Please verify your email.' 
+            : 'User created successfully. You can now login.';
+        
+        res.status(201).json({ message });
     } catch (err) {
         console.error('Signup error:', err);
-        res.status(400).json({ error: 'Error creating user' });
+        res.status(400).json({ error: err.message || 'Error creating user' });
     }
 });
 
