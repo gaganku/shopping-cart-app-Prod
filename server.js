@@ -29,29 +29,27 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from public dir
 
+// Database Connection
+const connectDB = require('./src/config/database');
+connectDB();
+
 // Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
+        // Reuse the existing mongoose connection logic
         mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/shopping_cart',
-        ttl: 24 * 60 * 60 // Session TTL (1 day)
+        ttl: 24 * 60 * 60, // 1 day
+        autoRemove: 'native' 
     }),
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // True in production
+        secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
-
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Database Connection
-const connectDB = require('./src/config/database');
-connectDB();
 
 // Email Configuration
 const { initializeEmailTransporter, getTransporter } = require('./src/config/email');
@@ -273,7 +271,11 @@ app.post('/api/auth/google/complete', async (req, res) => {
         const sessionData = req.session.googleAuth;
 
         if (!sessionData || !sessionData.otpVerified) {
-            return res.status(403).json({ error: 'Unauthorized' });
+            return res.status(403).json({ error: 'Unauthorized - Session expired or OTP not verified' });
+        }
+
+        if (!username) {
+            return res.status(400).json({ error: 'Username is required' });
         }
 
         // Check if username taken
@@ -283,7 +285,14 @@ app.post('/api/auth/google/complete', async (req, res) => {
         }
 
         const profile = sessionData.profile;
-        const email = profile.emails[0].value;
+        if (!profile) {
+            return res.status(400).json({ error: 'Profile data missing from session' });
+        }
+
+        const email = (profile.emails && profile.emails.length > 0) ? profile.emails[0].value : null;
+        if (!email) {
+            return res.status(400).json({ error: 'No email found in Google profile' });
+        }
 
         const newUser = new User({
             username,
@@ -291,7 +300,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
             googleId: profile.id,
             displayName: profile.displayName,
             phoneNumber: phone,
-            isVerified: false, // User requested to set this to false initially
+            isVerified: !transporter, // Auto-verify if email service is not configured
             lastLogin: new Date()
         });
 
@@ -317,8 +326,6 @@ app.post('/api/auth/google/complete', async (req, res) => {
                 const etherealUrl = nodemailer.getTestMessageUrl(welcomeEmail);
                 if (etherealUrl) {
                     console.log('Welcome email sent: %s', etherealUrl);
-                    const { exec } = require('child_process');
-                    exec(`start ${etherealUrl}`);
                 }
             } catch (emailErr) {
                 console.error('Error sending welcome email:', emailErr);
@@ -327,14 +334,14 @@ app.post('/api/auth/google/complete', async (req, res) => {
 
         // Login
         req.login(newUser, (err) => {
-            if (err) return res.status(500).json({ error: 'Login failed' });
+            if (err) return res.status(500).json({ error: 'Login failed: ' + err.message });
             delete req.session.googleAuth;
             res.json({ message: 'Account created and logged in' });
         });
 
     } catch (err) {
         console.error('Google Complete Error:', err);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Server error: ' + err.message });
     }
 });
 
