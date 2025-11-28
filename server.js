@@ -47,6 +47,15 @@ const { initializeEmailTransporter, getTransporter } = require('./src/config/ema
 let transporter;
 initializeEmailTransporter().then(t => { transporter = t; });
 
+// Email Service
+const { 
+    sendVerificationEmail, 
+    sendWelcomeEmail, 
+    sendOTPEmail,
+    sendOrderConfirmationEmail,
+    sendCredentialsEmail 
+} = require('./src/utils/emailService');
+
 // Passport Configuration
 const configurePassport = require('./src/config/passport');
 configurePassport();
@@ -138,7 +147,27 @@ app.get('/auth/google/callback',
                 return res.redirect('/login.html?error=no_email');
             }
 
-            // Generate OTP
+            // Check if existing user and if they need OTP (10-day check)
+            if (user) {
+                const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+                
+                // If user logged in within 10 days, skip OTP
+                if (user.lastLogin && user.lastLogin >= tenDaysAgo) {
+                    console.log('User logged in recently, skipping OTP');
+                    user.lastLogin = new Date();
+                    await user.save();
+                    
+                    return req.login(user, (loginErr) => {
+                        if (loginErr) {
+                            console.error('Login error:', loginErr);
+                            return res.redirect('/login.html?error=login_failed');
+                        }
+                        res.redirect('/index.html');
+                    });
+                }
+            }
+
+            // Generate OTP (for new users or users who haven't logged in for 10+ days)
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
             
             // Store in session
@@ -206,6 +235,9 @@ app.post('/api/auth/google/verify-otp', async (req, res) => {
             const user = await User.findById(sessionData.userId);
             if (!user) return res.status(404).json({ error: 'User not found' });
 
+            user.lastLogin = new Date();
+            await user.save();
+
             req.login(user, (err) => {
                 if (err) return res.status(500).json({ error: 'Login failed' });
                 delete req.session.googleAuth; // Clear session data
@@ -248,7 +280,8 @@ app.post('/api/auth/google/complete', async (req, res) => {
             googleId: profile.id,
             displayName: profile.displayName,
             phoneNumber: phone,
-            isVerified: false // User requested to set this to false initially
+            isVerified: false, // User requested to set this to false initially
+            lastLogin: new Date()
         });
 
         await newUser.save();
@@ -386,7 +419,8 @@ app.post('/api/signup', async (req, res) => {
             email, 
             password,
             verificationToken,
-            isVerified: false
+            isVerified: false,
+            lastLogin: new Date()
         });
         await user.save();
 
@@ -428,6 +462,7 @@ app.get('/api/verify', async (req, res) => {
 
         user.isVerified = true;
         user.verificationToken = undefined;
+        user.lastLogin = new Date();
         await user.save();
 
         // Send Welcome Email
@@ -481,7 +516,36 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Check password (simple string comparison for now as per existing code)
+        // In a real app, use bcrypt.compare(password, user.password)
         if (user.password === password) {
+            
+            // Check last login date for 2FA
+            const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+            
+            if (!user.lastLogin || user.lastLogin < tenDaysAgo) {
+                // Require 2FA
+                const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+                user.otpCode = otp;
+                user.otpExpires = otpExpires;
+                await user.save();
+
+                if (user.email) {
+                    await sendOTPEmail(user.email, otp, 'login');
+                }
+
+                return res.json({ 
+                    require2FA: true, 
+                    userId: user._id, 
+                    message: 'It has been a while! We sent a verification code to your email.' 
+                });
+            }
+
+            // No 2FA needed - Login
+            user.lastLogin = new Date();
+            await user.save();
+
             // Establish Passport session
             req.login(user, (err) => {
                 if (err) {
@@ -493,6 +557,45 @@ app.post('/api/login', async (req, res) => {
             res.status(401).json({ error: 'Invalid credentials' });
         }
     } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Verify 2FA Endpoint
+app.post('/api/auth/verify-2fa', async (req, res) => {
+    try {
+        const { userId, otp } = req.body;
+        
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (!user.otpCode || !user.otpExpires) {
+            return res.status(400).json({ error: 'No OTP requested' });
+        }
+
+        if (Date.now() > user.otpExpires) {
+            return res.status(400).json({ error: 'OTP expired' });
+        }
+
+        if (user.otpCode !== otp) {
+            return res.status(400).json({ error: 'Invalid OTP' });
+        }
+
+        // OTP Valid - Login User
+        user.otpCode = undefined;
+        user.otpExpires = undefined;
+        user.lastLogin = new Date(); // Update last login
+        await user.save();
+
+        req.login(user, (err) => {
+            if (err) return res.status(500).json({ error: 'Login failed' });
+            res.json({ message: 'Login successful', username: user.username });
+        });
+    } catch (err) {
+        console.error('2FA verify error:', err);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -696,8 +799,14 @@ app.post('/api/purchase', async (req, res) => {
 
         // Check if user is verified by admin (skip for admins)
         const user = await User.findOne({ username });
-        if (!user.isAdmin && !user.isAdminVerified) {
-             return res.status(403).json({ error: 'Account pending admin verification. Please contact support.' });
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check permissions: Allow if Admin OR Admin-Verified OR Email-Verified
+        if (!user.isAdmin && !user.isAdminVerified && !user.isVerified) {
+             return res.status(403).json({ error: 'Account pending verification. Please verify your email or contact support.' });
         }
 
         const product = await Product.findOne({ id: productId });
