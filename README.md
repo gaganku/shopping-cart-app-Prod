@@ -1,61 +1,35 @@
-# 🛒 ModernShop - Full-Stack E-Commerce Application
+# ModernShop - E-Commerce Platform
 
-A modern, full-featured e-commerce shopping cart application built with Node.js, Express, MongoDB, and vanilla JavaScript. Features include user authentication (local + Google OAuth), admin dashboard, product management with image uploads, and email notifications.
+A modern, full-stack e-commerce application built with Node.js, Express, MongoDB, and vanilla JavaScript.
 
-![ModernShop](https://img.shields.io/badge/Status-Active-success)
-![Node.js](https://img.shields.io/badge/Node.js-v20.16.0-green)
-![MongoDB](https://img.shields.io/badge/MongoDB-NoSQL-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-blue)
+## 🚀 Quick Start
 
-## ✨ Features
+### Automated Setup
 
-### 🔐 Authentication & Authorization
-- **Local Authentication**: Email-based signup with verification
-- **Google OAuth 2.0**: One-click sign-in with Google
-- **Session Management**: Secure sessions with Passport.js
-- **Role-Based Access**: Admin and regular user roles
+#### Windows
+```powershell
+.\setup.ps1
+```
 
-### 🛍️ Shopping Experience
-- **Product Catalog**: Browse products with images, descriptions, and prices
-- **Shopping Cart**: Add items to cart with stock validation
-- **Order Management**: View and confirm orders
-- **Email Notifications**: Automated order confirmation emails
+#### Mac/Linux
+```bash
+chmod +x setup.sh
+./setup.sh
+```
 
-### 👨‍💼 Admin Dashboard
-- **User Management**: 
-  - View all registered users
-  - Verify/unverify users
-  - Bulk user upload via Excel
-  - Delete users (with order cleanup)
-  - Search and filter users
-- **Product Management**:
-  - Add products with image upload or URL
-  - Update product stock with custom modal
-  - Delete products with confirmation
-  - Real-time product list updates
-- **Analytics**: User and order reports
+### Manual Setup
 
-### 🎨 Modern UI/UX
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Dark Theme**: Eye-friendly dark mode interface
-- **Glassmorphism Effects**: Modern, premium design
-- **Custom Modals**: Professional confirmation dialogs
-- **Smooth Animations**: Micro-interactions for better UX
+#### Prerequisites
+- Node.js (v14 or higher)
+- MongoDB (local or Atlas)
+- Git
 
-## 🚀 Getting Started
-
-### Prerequisites
-- **Node.js** (v20.16.0 or higher)
-- **MongoDB** (running locally or cloud instance)
-- **Gmail Account** (for email notifications)
-- **Google Cloud Project** (for OAuth - optional)
-
-### Installation
+#### Installation Steps
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/gaganku/shopping-cart-app.git
-cd shopping-cart-app
+git clone <your-repo-url>
+cd shopping_cart
 ```
 
 2. **Install dependencies**
@@ -63,40 +37,21 @@ cd shopping-cart-app
 npm install
 ```
 
-3. **Set up environment variables**
+3. **Configure environment**
+```bash
+# Copy the example environment file
+cp .env.example .env
 
-Create a `.env` file in the root directory (see `.env.example` for reference):
-
-```env
-# MongoDB Connection
-MONGODB_URI=mongodb://localhost:27017/shopping_cart
-
-# Session Secret
-SESSION_SECRET=your-secure-random-secret-key-change-this
-
-# Gmail SMTP (for sending emails)
-GMAIL_USER=your-email@gmail.com
-GMAIL_APP_PASSWORD=your-gmail-app-password
-
-# Google OAuth 2.0 (optional)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-
-# Server Port
-PORT=3000
+# Update .env with your configuration
 ```
 
 4. **Start MongoDB**
-
-Make sure MongoDB is running on your system:
 ```bash
-# On Windows (if installed as service)
-net start MongoDB
-
-# On macOS/Linux
-sudo systemctl start mongodb
-# or
+# Windows
 mongod
+
+# Mac/Linux
+sudo systemctl start mongod
 ```
 
 5. **Run the application**
@@ -104,191 +59,274 @@ mongod
 npm start
 ```
 
-The server will start on `http://localhost:3000`
-
-## 📧 Email Setup
-
-### Gmail App Password Setup
-
-1. Go to your Google Account settings
-2. Navigate to Security → 2-Step Verification
-3. Scroll down to "App passwords"
-4. Generate a new app password for "Mail"
-5. Copy the 16-character password to your `.env` file
-
-**Note**: If you don't configure Gmail, the app will use Ethereal (test email service) automatically.
-
-## 🔑 Google OAuth Setup (Optional)
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project or select existing
-3. Enable Google+ API
-4. Create OAuth 2.0 credentials
-5. Add authorized redirect URI: `http://localhost:3000/auth/google/callback`
-6. Copy Client ID and Client Secret to `.env` file
-
-See `GOOGLE_OAUTH_SETUP.md` for detailed instructions.
-
-## 👑 Admin Setup
-
-To create an admin user, run one of the helper scripts:
-
-### Method 1: Using the admin setup script
-```bash
-node scripts/make_admin.js
-```
-Enter the username when prompted.
-
-### Method 2: Direct MongoDB update
-```bash
-node scripts/set_admin.js
-```
-
-See `ADMIN_SETUP.md` for more details.
+6. **Access the application**
+Open your browser and navigate to `http://localhost:3000`
 
 ## 📁 Project Structure
 
 ```
-shopping-cart-app/
-├── models/              # MongoDB schemas
-│   ├── User.js         # User model
-│   ├── Product.js      # Product model
-│   └── Order.js        # Order model
-├── scripts/            # Utility scripts
-│   ├── make_admin.js   # Make user admin
-│   ├── set_admin.js    # Alternative admin script
-│   └── bots.js         # UI bot functionality
-├── uploads/            # Product image uploads
-├── admin.html          # Admin dashboard
-├── index.html          # Main shopping page
-├── login.html          # Login page
-├── signup.html         # Registration page
-├── cart.html           # Shopping cart
-├── complete-profile.html # OAuth profile completion
-├── server.js           # Express server
-├── app.js              # Frontend JavaScript
-├── style.css           # Styles
-├── .env                # Environment variables (gitignored)
-└── package.json        # Dependencies
+shopping_cart/
+├── public/              # Frontend static files
+│   ├── css/            # Stylesheets
+│   ├── js/             # Client-side JavaScript
+│   ├── index.html      # Main storefront
+│   ├── login.html      # Login page
+│   ├── signup.html     # Registration
+│   ├── admin.html      # Admin dashboard
+│   └── ...             # Other pages
+├── src/                # Backend source code
+│   ├── config/         # Configuration modules
+│   │   ├── database.js # MongoDB connection
+│   │   ├── email.js    # Email transporter
+│   │   └── passport.js # OAuth configuration
+│   ├── middleware/     # Custom middleware
+│   │   └── auth.js     # Authentication
+│   ├── models/         # Mongoose schemas
+│   │   ├── User.js
+│   │   ├── Product.js
+│   │   └── Order.js
+│   └── routes/         # API routes (future)
+├── uploads/            # User uploaded files
+├── .env.example        # Environment template
+├── .gitignore
+├── package.json
+├── README.md
+├── server.js           # Application entry point
+├── setup.ps1           # Windows setup script
+└── setup.sh            # Unix/Mac setup script
 ```
 
-## 🎯 Usage
+## 🔧 Configuration
 
-### For Users
-1. Visit `http://localhost:3000`
-2. Sign up with email or Google
-3. Verify email (if using local auth)
-4. Browse products and add to cart
-5. Confirm orders and receive email confirmation
+### Environment Variables
 
-### For Admins
-1. Log in with admin credentials
-2. Navigate to Admin Dashboard (`/admin.html`)
-3. Manage users (verify, delete, bulk upload)
-4. Manage products (add, update stock, delete)
-5. Download reports
+Create a `.env` file with the following variables:
 
-## 🛠️ Technologies Used
+```env
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/shopping_cart
 
-### Backend
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **MongoDB** - NoSQL database
-- **Mongoose** - ODM for MongoDB
-- **Passport.js** - Authentication middleware
-- **Multer** - File upload handling
-- **Nodemailer** - Email sending
-- **express-session** - Session management
+# Session Secret
+SESSION_SECRET=your-super-secret-key-change-this
 
-### Frontend
-- **Vanilla JavaScript** - No frameworks
-- **HTML5 & CSS3** - Modern web standards
-- **Fetch API** - HTTP requests
-- **FormData** - File uploads
+# Gmail Configuration (for email sending)
+GMAIL_USER=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-app-specific-password
 
-## 🔒 Security Features
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-- Password storage (plain text - **TODO**: hash passwords with bcrypt)
-- Email verification for new users
-- Admin verification before purchasing
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+```
+
+### Gmail Setup
+
+1. Enable 2-Factor Authentication on your Gmail account
+2. Generate an App Password:
+   - Go to Google Account Settings
+   - Security → 2-Step Verification → App passwords
+   - Generate a password for "Mail"
+3. Use this password in `GMAIL_APP_PASSWORD`
+
+### Google OAuth Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project
+3. Enable Google+ API
+4. Create OAuth 2.0 credentials
+5. Add authorized redirect URI: `http://localhost:3000/auth/google/callback`
+6. Copy Client ID and Secret to `.env`
+
+## 🎯 Features
+
+### User Features
+- User registration and authentication
+- Google OAuth login with OTP verification
+- Email verification
+- Password reset
+- Product browsing and search
+- Shopping cart
+- Order management
+- Purchase history
+- Account deletion
+
+### Admin Features
+- Admin dashboard
+- User management
+- Bulk user upload (Excel/CSV)
+- Product management (CRUD)
+- Order management
+- User verification
+- Analytics and reports
+
+### Security Features
 - Session-based authentication
+- Google OAuth 2.0
+- OTP verification for Google logins
+- Email verification
 - CORS protection
-- Input validation
-- Admin-only routes protected by middleware
+- Secure session cookies
 
-## 📝 API Endpoints
+## 📚 API Documentation
 
-### Authentication
-- `POST /api/signup` - User registration
-- `POST /api/login` - User login
-- `POST /api/logout` - User logout
-- `GET /api/auth/status` - Check auth status
-- `GET /auth/google` - Google OAuth login
-- `GET /auth/google/callback` - OAuth callback
+### Authentication Endpoints
 
-### Products
-- `GET /api/products` - Get all products
-- `POST /api/admin/products` - Create product (admin)
-- `PATCH /api/admin/products/:id/stock` - Update stock (admin)
-- `DELETE /api/admin/products/:id` - Delete product (admin)
+```
+POST /api/signup              # Create new account
+POST /api/login               # Login with credentials
+POST /api/logout              # Logout
+GET  /auth/google             # Google OAuth login
+POST /api/auth/google/verify-otp    # Verify Google OTP
+POST /api/auth/google/complete      # Complete Google signup
+GET  /api/verify?token=xxx    # Verify email address
+```
 
-### Orders
-- `POST /api/purchase` - Create order
-- `GET /api/orders/:username` - Get user's orders
-- `POST /api/orders/:id/confirm` - Confirm order
-- `DELETE /api/orders/:id` - Cancel order
+### Product Endpoints
 
-### Admin
-- `GET /api/admin/users` - Get all users
-- `POST /api/admin/verify-user` - Verify/unverify user
-- `POST /api/admin/users/bulk-delete` - Delete users
-- `POST /api/admin/bulk-upload` - Upload users from Excel
+```
+GET    /api/products          # Get all products
+POST   /api/admin/products    # Create product (admin)
+PUT    /api/admin/products/:id      # Update product (admin)
+DELETE /api/admin/products/:id      # Delete product (admin)
+```
 
-## 🚧 Future Enhancements
+### Order Endpoints
 
-- [ ] Password hashing with bcrypt
-- [ ] Payment gateway integration (Stripe/PayPal)
-- [ ] Product categories and filtering
-- [ ] User reviews and ratings
-- [ ] Order history and tracking
-- [ ] Wishlist functionality
-- [ ] Admin analytics dashboard
-- [ ] Docker containerization
-- [ ] API rate limiting
-- [ ] Redis caching
-- [ ] Image optimization
-- [ ] Search functionality
-- [ ] Multi-language support
+```
+POST /api/purchase            # Create new purchase
+GET  /api/orders              # Get user orders
+GET  /api/admin/all-orders    # Get all orders (admin)
+```
 
-## 🤝 Contributing
+### Admin Endpoints
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+```
+GET    /api/admin/users                # Get all users
+POST   /api/admin/bulk-upload          # Bulk upload users
+POST   /api/admin/verify-user          # Verify user
+DELETE /api/admin/users                # Delete users
+POST   /api/admin/users/bulk-delete    # Bulk delete users
+```
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## 🧪 Testing
 
-## 📄 License
+### Manual Testing
+1. Create a test user via signup
+2. Verify email (check console for test email link)
+3. Login and browse products
+4. Add items to cart
+5. Complete purchase
+6. Access admin panel (promote user to admin first)
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Test Data
+Sample products are automatically seeded on first run.
+
+## 🚢 Deployment
+
+### Production Checklist
+- [ ] Change `SESSION_SECRET` to a strong random string
+- [ ] Set `NODE_ENV=production`
+- [ ] Use production MongoDB instance (MongoDB Atlas)
+- [ ] Configure proper CORS origins
+- [ ] Enable HTTPS
+- [ ] Set secure cookie flags
+- [ ] Implement rate limiting
+- [ ] Add password hashing (bcrypt - TODO)
+- [ ] Add input sanitization
+- [ ] Add helmet.js for security headers
+- [ ] Configure proper error logging
+- [ ] Set up monitoring
+
+### Deployment Platforms
+
+#### Heroku
+```bash
+heroku create your-app-name
+heroku config:set MONGODB_URI=<your-atlas-uri>
+heroku config:set SESSION_SECRET=<random-string>
+git push heroku main
+```
+
+#### Vercel/Netlify
+Requires serverless configuration (not included in this version)
+
+#### VPS (DigitalOcean, AWS EC2, etc.)
+```bash
+# Install Node.js and MongoDB
+# Clone repository
+# Configure .env
+# Use PM2 for process management
+npm install -g pm2
+pm2 start server.js --name modernshop
+pm2 startup
+pm2 save
+```
+
+## 🔐 Security Considerations
+
+**Current Implementation:**
+- Session-based authentication ✅
+- Google OAuth ✅
+- Email verification ✅
+- OTP for Google logins ✅
+- CORS protection ✅
+
+**TODO for Production:**
+- ⚠️ Password hashing (currently plain text - CRITICAL)
+- Rate limiting
+- Input sanitization
+- SQL/NoSQL injection prevention
+- XSS protection
+- CSRF tokens
+- Security headers (helmet.js)
+
+## 🛠️ Development
+
+### Running in Development Mode
+```bash
+npm start
+```
+
+### File Structure Best Practices
+- Keep routes in `src/routes/`
+- Keep business logic in `src/controllers/`
+- Keep utilities in `src/utils/`
+- Keep configurations in `src/config/`
+
+### Adding New Features
+1. Create a new branch
+2. Implement feature
+3. Test thoroughly
+4. Update documentation
+5. Submit pull request
+
+## 📝 License
+
+MIT License - See LICENSE file for details
 
 ## 👤 Author
 
-**Gagan Kumar**
-- GitHub: [@gaganku](https://github.com/gaganku)
+Your Name / Organization
 
-## 🙏 Acknowledgments
+## 🤝 Contributing
 
-- Product images from [Unsplash](https://unsplash.com)
-- Icons and UI inspiration from modern e-commerce platforms
-- MongoDB and Express.js communities
+Contributions, issues, and feature requests are welcome!
 
-## 📧 Support
+## 📞 Support
 
-For issues, questions, or suggestions, please open an issue on GitHub.
+For support, email your-email@example.com or open an issue.
+
+## 🎓 Version History
+
+- **v5.0** - Production-ready restructuring
+- **v4.0** - Google Auth OTP & Welcome Emails
+- **v3.0** - Admin dashboard enhancements
+- **v2.0** - Core e-commerce features
+- **v1.0** - Initial release
 
 ---
 
-⭐ **Star this repository if you find it helpful!** ⭐
+**Made with ❤️ using Node.js, Express, MongoDB**

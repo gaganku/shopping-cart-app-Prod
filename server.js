@@ -21,7 +21,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '.'))); // Serve static files from current dir
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from public dir
 
 // Session configuration
 app.use(session({
@@ -38,114 +38,29 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/shopping_cart', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log('Connected to MongoDB');
-}).catch(err => console.error('MongoDB connection error:', err));
+// Database Connection
+const connectDB = require('./src/config/database');
+connectDB();
 
-// Nodemailer Transporter
+// Email Configuration
+const { initializeEmailTransporter, getTransporter } = require('./src/config/email');
 let transporter;
+initializeEmailTransporter().then(t => { transporter = t; });
 
-// Check if Gmail credentials are provided
-if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    // Use Gmail for real emails
-    transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD
-        }
-    });
-    console.log('Gmail SMTP configured for sending real emails');
-} else {
-    // Fallback to Ethereal for testing
-    console.log('Gmail credentials not found, using Ethereal test email...');
-    nodemailer.createTestAccount().then(account => {
-        transporter = nodemailer.createTransport({
-            host: account.smtp.host,
-            port: account.smtp.port,
-            secure: account.smtp.secure,
-            auth: {
-                user: account.user,
-                pass: account.pass
-            }
-        });
-        console.log('Ethereal Email configured (test mode)');
-    }).catch(err => console.error('Failed to create test account:', err));
-}
+// Passport Configuration
+const configurePassport = require('./src/config/passport');
+configurePassport();
 
 // Routes
-const User = require('./models/User');
-const Product = require('./models/Product');
-const Order = require('./models/Order');
+const User = require('./src/models/User');
+const Product = require('./src/models/Product');
+const Order = require('./src/models/Order');
 
 // Multer configuration for file uploads
 const upload = multer({ dest: 'uploads/' });
 
-// Admin Middleware
-function isAdmin(req, res, next) {
-    if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: 'Not authenticated' });
-    }
-    if (!req.user.isAdmin) {
-        return res.status(403).json({ error: 'Admin access required' });
-    }
-    next();
-}
-
-
-// Passport Google OAuth Strategy
-console.log('Configuring Google OAuth Strategy...');
-console.log('Client ID:', process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET');
-console.log('Client Secret:', process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'NOT SET');
-
-try {
-    passport.use(new GoogleStrategy({
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: 'http://localhost:3000/auth/google/callback'
-    }, async (accessToken, refreshToken, profile, done) => {
-        try {
-            console.log('Google OAuth callback received for user:', profile.id);
-            // Check if user already exists
-            let user = await User.findOne({ googleId: profile.id });
-            
-            if (user) {
-                console.log('Existing user found:', user.username);
-                return done(null, user);
-            }
-            
-            // User not found - do NOT create new user
-            console.log('User not found for Google ID:', profile.id);
-            return done(null, false, { message: 'User not registered', profile: profile });
-            
-        } catch (err) {
-            console.error('Error in Google OAuth callback:', err);
-            done(err, null);
-        }
-    }));
-    console.log('Google OAuth Strategy configured successfully');
-} catch (err) {
-    console.error('Error configuring Google OAuth Strategy:', err);
-}
-
-// Serialize user for session
-passport.serializeUser((user, done) => {
-    done(null, user.id);
-});
-
-// Deserialize user from session
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id);
-        done(null, user);
-    } catch (err) {
-        done(err, null);
-    }
-});
+// Middleware
+const { isAdmin, isAuthenticated } = require('./src/middleware/auth');
 
 // Seed Products (if empty)
 const initialProducts = [
