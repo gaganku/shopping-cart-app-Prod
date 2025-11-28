@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 
 // CORS Configuration
 app.use(cors({
-    origin: 'https://shopping-cart-app-prod-3.onrender.com',
+    origin: process.env.BASE_URL || 'http://localhost:3000',
     credentials: true
 }));
 app.use(bodyParser.json());
