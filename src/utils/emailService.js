@@ -50,7 +50,7 @@ const sendVerificationEmail = async (email, username, token) => {
         return;
     }
 
-    const verificationLink = `http://localhost:3000/api/verify?token=${token}`;
+    const verificationLink = `https://shopping-cart-app-prod-3.onrender.com/api/verify?token=${token}`;
 
     try {
         const info = await transporter.sendMail({
@@ -102,7 +102,7 @@ const sendWelcomeEmail = async (email, username) => {
                         <p style="font-size: 16px; color: #333; line-height: 1.6;">Your account has been successfully verified. We're thrilled to have you on board!</p>
                         <p style="font-size: 16px; color: #333; line-height: 1.6;">You can now login and start shopping for the best tech gadgets.</p>
                         <div style="text-align: center; margin-top: 30px;">
-                            <a href="http://localhost:3000/login.html" style="background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Login Now</a>
+                            <a href="https://shopping-cart-app-prod-3.onrender.com/login.html" style="background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Login Now</a>
                         </div>
                     </div>
                 </div>
@@ -182,7 +182,7 @@ const sendCredentialsEmail = async (email, username, password) => {
                         </div>
                         <p style="font-size: 14px; color: #e74c3c;"><strong>Important:</strong> Please change your password after your first login.</p>
                         <div style="text-align: center; margin-top: 30px;">
-                            <a href="http://localhost:3000/login.html" style="background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Login Now</a>
+                            <a href="https://shopping-cart-app-prod-3.onrender.com/login.html" style="background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Login Now</a>
                         </div>
                     </div>
                 </div>

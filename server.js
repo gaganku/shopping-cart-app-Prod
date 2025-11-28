@@ -8,21 +8,6 @@ const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const nodemailer = require('nodemailer');
-const crypto = require('crypto');
-const xlsx = require('xlsx');
-const multer = require('multer');
-const fs = require('fs');
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(cors({
-    origin: 'http://localhost:3000',
-    credentials: true
-}));
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from public dir
-
 // Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
@@ -425,7 +410,7 @@ app.post('/api/signup', async (req, res) => {
         await user.save();
 
         // Send verification email
-        const verificationLink = `http://localhost:3000/api/verify?token=${verificationToken}`;
+        const verificationLink = `https://shopping-cart-app-prod-3.onrender.com/api/verify?token=${verificationToken}`;
         
         const info = await transporter.sendMail({
             from: '"ModernShop" <noreply@modernshop.com>',
@@ -480,7 +465,7 @@ app.get('/api/verify', async (req, res) => {
                                 <p style="font-size: 16px; color: #333; line-height: 1.6;">Your account has been successfully verified. We're thrilled to have you on board!</p>
                                 <p style="font-size: 16px; color: #333; line-height: 1.6;">You can now login and start shopping for the best tech gadgets.</p>
                                 <div style="text-align: center; margin-top: 30px;">
-                                    <a href="http://localhost:3000/login.html" style="background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Login Now</a>
+                                    <a href="https://shopping-cart-app-prod-3.onrender.com/login.html" style="background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Login Now</a>
                                 </div>
                             </div>
                         </div>
@@ -901,7 +886,7 @@ app.post('/api/orders/:orderId/confirm', async (req, res) => {
                                 
                                 <p style="font-size: 14px; color: #666; line-height: 1.6; margin-top: 30px;">
                                     You can view your order details anytime by visiting your 
-                                    <a href="http://localhost:3000/cart.html" style="color: #667eea; text-decoration: none; font-weight: 600;">cart page</a>.
+                                    <a href="https://shopping-cart-app-prod-3.onrender.com/cart.html" style="color: #667eea; text-decoration: none; font-weight: 600;">cart page</a>.
                                 </p>
                                 
                                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -1162,7 +1147,7 @@ app.post('/api/admin/bulk-upload', isAdmin, upload.single('file'), async (req, r
                             <li>Username: <strong>${username}</strong></li>
                             <li>Temporary Password: <strong>${password}</strong></li>
                         </ul>
-                        <p>Please login at: <a href="http://localhost:3000/login.html">http://localhost:3000/login.html</a></p>
+                        <p>Please login at: <a href="https://shopping-cart-app-prod-3.onrender.com/login.html">https://shopping-cart-app-prod-3.onrender.com/login.html</a></p>
                         <p><strong>Important:</strong> You will be required to change your password on first login.</p>
                     `
                 });
