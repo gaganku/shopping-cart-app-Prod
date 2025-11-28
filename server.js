@@ -13,8 +13,13 @@ const xlsx = require('xlsx');
 const multer = require('multer');
 const fs = require('fs');
 
+const MongoStore = require('connect-mongo');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Trust proxy (Required for Vercel/Render/Heroku)
+app.set('trust proxy', 1);
 
 // CORS Configuration
 app.use(cors({
@@ -29,8 +34,13 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/shopping_cart',
+        ttl: 24 * 60 * 60 // Session TTL (1 day)
+    }),
     cookie: {
-        secure: false, // Set to true if using HTTPS
+        secure: process.env.NODE_ENV === 'production', // True in production
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
