@@ -216,6 +216,7 @@
         <h1 class="login-title">Create Account</h1>
         <input type="text" id="signup-username" class="login-input" placeholder="Choose a username" autofocus>
         <input type="email" id="signup-email" class="login-input" placeholder="Enter your email">
+        <input type="tel" id="signup-phone" class="login-input" placeholder="Mobile Number (Optional)">
         <input type="password" id="signup-password" class="login-input" placeholder="Choose a password">
         <input type="password" id="signup-confirm-password" class="login-input" placeholder="Confirm password">
         <button id="signup-btn" class="login-btn">Sign Up</button>
@@ -247,11 +248,12 @@
         async function signup() {
             const username = usernameInput.value.trim();
             const email = emailInput.value.trim();
+            const phoneNumber = document.getElementById('signup-phone').value.trim();
             const password = passwordInput.value.trim();
             const confirmPassword = confirmPasswordInput.value.trim();
 
             if (!username || !email || !password || !confirmPassword) {
-                alert('Please fill in all fields');
+                alert('Please fill in all fields (Phone is optional)');
                 return;
             }
 
@@ -264,14 +266,18 @@
                 const response = await fetch('/api/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
+                    body: JSON.stringify({ username, email, phoneNumber, password })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert('Signup successful! Please check your email to verify your account before logging in.');
-                    window.location.href = 'login.html';
+                    if (data.require2FA) {
+                        window.location.href = `google-otp.html?userId=${data.userId}`;
+                    } else {
+                        alert('Signup successful! Please login.');
+                        window.location.href = 'login.html';
+                    }
                 } else {
                     alert(data.error || 'Signup failed');
                 }

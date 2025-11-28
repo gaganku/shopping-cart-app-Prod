@@ -5,12 +5,18 @@ const UserSchema = new mongoose.Schema({
     password: { type: String }, // Optional for OAuth users
     googleId: { type: String, unique: true, sparse: true }, // Google OAuth ID
     email: { type: String, sparse: true }, // User's email (required for local signup, optional for Google initially but good to have)
+    phoneNumber: { type: String, sparse: true }, // Mobile number for SMS 2FA
     displayName: { type: String }, // User's display name from Google
     isVerified: { type: Boolean, default: false },
     isAdminVerified: { type: Boolean, default: false },
     verificationToken: { type: String },
     isAdmin: { type: Boolean, default: false },
     mustChangePassword: { type: Boolean, default: false },
+    otpCode: { type: String },
+    otpExpires: { type: Date },
+    lastLogin: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
     createdAt: { type: Date, default: Date.now }
 });
 

@@ -78,6 +78,7 @@
         <h1 class="login-title">Complete Profile</h1>
         <p class="login-subtitle">Please choose a username to finish setting up your account.</p>
         <input type="text" id="username" class="login-input" placeholder="Choose a username" autofocus>
+        <input type="tel" id="phoneNumber" class="login-input" placeholder="Mobile Number (Optional)">
         <button id="complete-btn" class="login-btn">Complete Signup</button>
     </div>
 
@@ -87,6 +88,7 @@
 
         async function completeSignup() {
             const username = usernameInput.value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
 
             if (!username) {
                 alert('Please enter a username');
@@ -97,13 +99,17 @@
                 const response = await fetch('/api/auth/google/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username })
+                    body: JSON.stringify({ username, phoneNumber })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    window.location.href = 'index.html';
+                    if (data.require2FA) {
+                        window.location.href = 'login.html?google2fa=true';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
                 } else {
                     alert(data.error || 'Signup failed');
                 }

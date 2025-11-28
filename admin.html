@@ -1056,6 +1056,15 @@
             }
         }
 
+        // Reset upload form function  
+        function resetUploadForm() {
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-name').textContent = '';
+            document.getElementById('upload-btn').style.display = 'none';
+            document.getElementById('upload-progress').style.display = 'none';
+            document.getElementById('upload-results').style.display = 'none';
+        }
+
         // File selection
         document.getElementById('file-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -1138,24 +1147,41 @@
 
                 if (xhr.status === 200) {
                     const data = JSON.parse(xhr.responseText);
+                    const results = data.results || { success: [], failed: [] };
                     
                     // Show results
                     const resultsDiv = document.getElementById('upload-results');
                     resultsDiv.style.display = 'block';
                     
-                    let html = `<h3 style="margin-top: 0; color: var(--success);">Upload Successful!</h3>`;
-                    html += `<p>Successfully added: <strong>${data.success.length}</strong> users</p>`;
+                    // Separate duplicates from other errors
+                    const duplicates = results.failed.filter(f => f.reason && f.reason.includes('already exists'));
+                    const errors = results.failed.filter(f => !f.reason || !f.reason.includes('already exists'));
                     
-                    if (data.failed.length > 0) {
-                        html += `<p style="color: var(--danger);">Failed: <strong>${data.failed.length}</strong> users</p>`;
-                        html += `<div style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-top: 1rem;">`;
-                        data.failed.forEach(fail => {
-                            html += `<div style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">
-                                ${fail.email}: ${fail.reason}
-                            </div>`;
+                    let html = `<h3 style="margin-top: 0; color: var(--success);">✅ Upload Complete!</h3>`;
+                    html += `<p><strong>${results.success.length}</strong> new user(s) added successfully</p>`;
+                    
+                    if (duplicates.length > 0) {
+                        html += `<p style="color: var(--accent);">⚠️ <strong>${duplicates.length}</strong> user(s) skipped (already in database)</p>`;
+                        html += `<div style="max-height: 120px; overflow-y: auto; background: rgba(34,211,238,0.1); padding: 1rem; border-radius: 8px; margin-top: 0.5rem; border: 1px solid rgba(34,211,238,0.2);">`;
+                        html += `<div style="color: var(--accent); font-weight: 600; margin-bottom: 0.5rem;">Skipped (duplicates):</div>`;
+                        duplicates.forEach(fail => {
+                            const username = fail.username || fail.email || 'Unknown'; // Adjusted based on server push
+                            const email = fail.email || 'Unknown';
+                            html += `<div style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.3rem;">• ${email}</div>`;
                         });
                         html += `</div>`;
                     }
+                    
+                    if (errors.length > 0) {
+                        html += `<p style="color: var(--danger);">❌ <strong>${errors.length}</strong> error(s)</p>`;
+                        html += `<div style="max-height: 120px; overflow-y: auto; background: rgba(244,63,94,0.1); padding: 1rem; border-radius: 8px; margin-top: 0.5rem; border: 1px solid rgba(244,63,94,0.2);">`;
+                        errors.forEach(fail => {
+                            html += `<div style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">${fail.email || 'Unknown'}: ${fail.reason}</div>`;
+                        });
+                        html += `</div>`;
+                    }
+                    
+                    html += `<button onclick="resetUploadForm()" class="upload-btn" style="margin-top: 1.5rem; background: var(--primary);">📤 Upload Another File</button>`;
 
                     resultsDiv.innerHTML = html;
                     loadUsers(); // Refresh user list

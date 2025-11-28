@@ -187,6 +187,9 @@
             justify-content: center;
             gap: 0.75rem;
             text-decoration: none;
+            position: relative;
+            z-index: 10;
+            border: 1px solid #e2e8f0;
         }
 
         .google-btn:hover {
@@ -296,6 +299,9 @@
         <h1 class="login-title">Welcome Back</h1>
         <input type="text" id="login-username" class="login-input" placeholder="Username" autofocus>
         <input type="password" id="login-password" class="login-input" placeholder="Password">
+        <div style="text-align: right; margin-bottom: 1rem;">
+            <a href="forgot-password.html" style="color: var(--text-light); text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
+        </div>
         <button id="login-btn" class="login-btn">Login</button>
         
         <div class="divider">
@@ -320,84 +326,142 @@
             <h2 class="modal-title">Account Not Found</h2>
             <p class="modal-text">This Google account is not registered with us. Please create an account to continue.</p>
             <a href="signup.html" class="modal-btn modal-btn-primary">Create Account</a>
-            <button onclick="closeModal()" class="modal-btn modal-btn-secondary">Close</button>
+            <button class="modal-btn modal-btn-secondary">Close</button>
+        </div>
+    </div>
+
+    <!-- 2FA Verification Modal -->
+    <div id="modal-2fa" class="modal-overlay">
+        <div class="modal-card">
+            <h2 class="modal-title">Two-Step Verification</h2>
+            <p class="modal-text">We've sent a verification code to your email. Please enter it below to continue.</p>
+            <input type="text" id="otp-input" class="login-input" placeholder="Enter 6-digit code" style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;">
+            <button class="modal-btn modal-btn-primary">Verify Code</button>
+            <button class="modal-btn modal-btn-secondary">Cancel</button>
         </div>
     </div>
     
     <script>
-        // OAuth session check – redirects to main page if already logged in
-        async function checkOAuthRedirect() {
-            try {
-                const resp = await fetch('/api/auth/status', { credentials: 'include' });
-                const data = await resp.json();
-                if (data.authenticated) {
-                    sessionStorage.removeItem('currentUser');
-                    window.location.href = '/index.html';
-                }
-            } catch (e) {
-                console.error('OAuth status check failed:', e);
+document.addEventListener('DOMContentLoaded', () => {
+    // OAuth session check – redirects to main page if already logged in
+    async function checkOAuthRedirect() {
+        try {
+            const resp = await fetch('/api/auth/status', { credentials: 'include' });
+            const data = await resp.json();
+            if (data.authenticated) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = '/index.html';
             }
+        } catch (e) {
+            console.error('OAuth status check failed:', e);
         }
-        checkOAuthRedirect();
-    </script>
-    
-    <script>
-        const loginBtn = document.getElementById('login-btn');
-        const usernameInput = document.getElementById('login-username');
-        const passwordInput = document.getElementById('login-password');
+    }
+    checkOAuthRedirect();
 
-        // Modal functions
-        const modal = document.getElementById('error-modal');
-        
-        function showModal() {
-            modal.style.display = 'flex';
-        }
-        
-        function closeModal() {
-            modal.style.display = 'none';
-        }
+    const loginBtn = document.getElementById('login-btn');
+    const usernameInput = document.getElementById('login-username');
+    const passwordInput = document.getElementById('login-password');
+    const otpInput = document.getElementById('otp-input');
+    let pendingUserId = null;
 
-        // Check for URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('error') === 'not_registered') {
-            showModal();
-            // Clean up URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        
-        async function login() {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
+    // Modal functions
+    const errorModal = document.getElementById('error-modal');
+    function showErrorModal() { 
+        if (errorModal) errorModal.style.display = 'flex'; 
+    }
+    function closeErrorModal() { 
+        if (errorModal) errorModal.style.display = 'none'; 
+    }
 
-            if (!username || !password) {
-                alert('Please enter both username and password');
-                return;
-            }
+    function show2FAModal() {
+        const modal = document.getElementById('modal-2fa');
+        if (!modal) { console.error('2FA modal not found'); return; }
+        modal.style.display = 'flex';
+        if (otpInput) otpInput.focus();
+    }
+    function close2FAModal() {
+        const modal = document.getElementById('modal-2fa');
+        if (modal) modal.style.display = 'none';
+        pendingUserId = null;
+        if (otpInput) otpInput.value = '';
+    }
 
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password }),
-                    credentials: 'include'
-                });
+    // Check for URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('error') === 'not_registered') {
+        showErrorModal();
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('google2fa') === 'true') {
+        show2FAModal();
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
-                const data = await response.json();
-
-                if (response.ok) {
+    async function login() {
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+        if (!username || !password) { alert('Please enter both username and password'); return; }
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (response.ok) {
+                if (data.require2FA) {
+                    pendingUserId = data.userId;
+                    const modalText = document.querySelector('#modal-2fa .modal-text');
+                    if (modalText) modalText.textContent = data.message;
+                    show2FAModal();
+                } else {
                     sessionStorage.setItem('currentUser', username);
                     window.location.href = 'index.html';
-                } else {
-                    alert(data.error || 'Login failed');
                 }
-            } catch (e) {
-                alert('Server error. Please try again.');
+            } else {
+                alert(data.error || 'Login failed');
             }
+        } catch (e) {
+            alert('Server error. Please try again.');
         }
-        
-        loginBtn.addEventListener('click', login);
-        passwordInput.addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
-    </script>
+    }
+    async function verify2FA() {
+        const otp = otpInput.value.trim();
+        if (!otp) { alert('Please enter the verification code'); return; }
+        try {
+            const response = await fetch('/api/auth/verify-2fa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: pendingUserId, otp }),
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (response.ok) {
+                sessionStorage.setItem('currentUser', data.username);
+                window.location.href = 'index.html';
+            } else {
+                alert(data.error || 'Verification failed');
+            }
+        } catch (e) {
+            alert('Server error. Please try again.');
+        }
+    }
+    // Attach event listeners
+    if (loginBtn) loginBtn.addEventListener('click', login);
+    if (passwordInput) passwordInput.addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+
+    // Attach event listeners for modal buttons
+    const errorModalPrimaryBtn = document.querySelector('#error-modal .modal-btn-primary');
+    if (errorModalPrimaryBtn) errorModalPrimaryBtn.addEventListener('click', () => window.location.href = 'signup.html');
+    const errorModalSecondaryBtn = document.querySelector('#error-modal .modal-btn-secondary');
+    if (errorModalSecondaryBtn) errorModalSecondaryBtn.addEventListener('click', closeErrorModal);
+
+    const twoFAModalPrimaryBtn = document.querySelector('#modal-2fa .modal-btn-primary');
+    if (twoFAModalPrimaryBtn) twoFAModalPrimaryBtn.addEventListener('click', verify2FA);
+    const twoFAModalSecondaryBtn = document.querySelector('#modal-2fa .modal-btn-secondary');
+    if (twoFAModalSecondaryBtn) twoFAModalSecondaryBtn.addEventListener('click', close2FAModal);
+});
+</script>
     <script src="scripts/bots.js"></script>
 </body>
 </html>
