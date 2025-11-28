@@ -51,6 +51,14 @@ app.use(session({
     }
 }));
 
+// Initialize Passport (CRITICAL: Must be after session)
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Configure Passport Strategy
+const configurePassport = require('./src/config/passport');
+configurePassport();
+
 // Email Configuration
 const { initializeEmailTransporter, getTransporter } = require('./src/config/email');
 let transporter;
