@@ -81,7 +81,11 @@ const Product = require('./src/models/Product');
 const Order = require('./src/models/Order');
 
 // Multer configuration for file uploads
-const upload = multer({ dest: 'uploads/' });
+const uploadDir = process.env.NODE_ENV === 'production' ? '/tmp' : 'uploads/';
+if (process.env.NODE_ENV !== 'production' && !fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+const upload = multer({ dest: uploadDir });
 
 // Middleware
 const { isAdmin, isAuthenticated } = require('./src/middleware/auth');
@@ -735,7 +739,12 @@ app.get('/api/products', async (req, res) => {
 });
 
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve uploaded files
+if (process.env.NODE_ENV === 'production') {
+    app.use('/uploads', express.static('/tmp'));
+} else {
+    app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+}
 
 // Admin: Create new product
 app.post('/api/admin/products', isAdmin, upload.single('imageFile'), async (req, res) => {
