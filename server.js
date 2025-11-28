@@ -73,9 +73,7 @@ const {
     sendCredentialsEmail 
 } = require('./src/utils/emailService');
 
-// Passport Configuration
-const configurePassport = require('./src/config/passport');
-configurePassport();
+
 
 // Routes
 const User = require('./src/models/User');
