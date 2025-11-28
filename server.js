@@ -8,6 +8,22 @@ const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+const xlsx = require('xlsx');
+const multer = require('multer');
+const fs = require('fs');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// CORS Configuration
+app.use(cors({
+    origin: 'https://shopping-cart-app-prod-3.onrender.com',
+    credentials: true
+}));
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from public dir
+
 // Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
