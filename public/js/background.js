@@ -1,16 +1,17 @@
-class InteractiveBackground {
+class AnimeBackground {
     constructor() {
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
-        this.particles = [];
-        this.mouse = { x: null, y: null, radius: 150 };
-        this.particleCount = 0; // Will be set based on screen size
+        this.petals = [];
+        this.mouse = { x: -1000, y: -1000 };
+        this.width = 0;
+        this.height = 0;
         
         this.init();
     }
 
     init() {
-        this.canvas.id = 'bg-canvas';
+        this.canvas.id = 'anime-bg';
         this.canvas.style.position = 'fixed';
         this.canvas.style.top = '0';
         this.canvas.style.left = '0';
@@ -18,17 +19,19 @@ class InteractiveBackground {
         this.canvas.style.height = '100%';
         this.canvas.style.zIndex = '-1';
         this.canvas.style.pointerEvents = 'none';
-        this.canvas.style.background = 'radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%)';
+        // Deep anime night sky gradient
+        this.canvas.style.background = 'linear-gradient(to bottom, #0f0c29, #302b63, #24243e)';
+        
         document.body.prepend(this.canvas);
 
         window.addEventListener('resize', () => this.resize());
         window.addEventListener('mousemove', (e) => {
-            this.mouse.x = e.x;
-            this.mouse.y = e.y;
+            this.mouse.x = e.clientX;
+            this.mouse.y = e.clientY;
         });
         window.addEventListener('mouseout', () => {
-            this.mouse.x = null;
-            this.mouse.y = null;
+            this.mouse.x = -1000;
+            this.mouse.y = -1000;
         });
 
         this.resize();
@@ -36,89 +39,94 @@ class InteractiveBackground {
     }
 
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        this.initParticles();
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+        this.initPetals();
     }
 
-    initParticles() {
-        this.particles = [];
-        // Adjust particle count based on screen area
-        this.particleCount = (this.canvas.width * this.canvas.height) / 9000;
-        
-        for (let i = 0; i < this.particleCount; i++) {
-            this.particles.push({
-                x: Math.random() * this.canvas.width,
-                y: Math.random() * this.canvas.height,
-                vx: (Math.random() - 0.5) * 0.5,
-                vy: (Math.random() - 0.5) * 0.5,
-                size: Math.random() * 2 + 1,
-                color: Math.random() > 0.5 ? '#8b5cf6' : '#22d3ee' // Theme colors
-            });
+    initPetals() {
+        this.petals = [];
+        // Adjust density
+        const count = (this.width * this.height) / 8000;
+        for (let i = 0; i < count; i++) {
+            this.petals.push(this.createPetal(true));
         }
+    }
+
+    createPetal(randomY = false) {
+        return {
+            x: Math.random() * this.width,
+            y: randomY ? Math.random() * this.height : -20,
+            size: Math.random() * 8 + 5,
+            speed: Math.random() * 1.5 + 0.5,
+            sway: Math.random() * 2 - 1,
+            swaySpeed: Math.random() * 0.02 + 0.005,
+            swayOffset: Math.random() * Math.PI * 2,
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 2,
+            color: `rgba(255, ${180 + Math.random() * 40}, ${200 + Math.random() * 55}, ${0.6 + Math.random() * 0.4})`
+        };
+    }
+
+    drawPetal(p) {
+        this.ctx.save();
+        this.ctx.translate(p.x, p.y);
+        this.ctx.rotate(p.rotation * Math.PI / 180);
+        this.ctx.beginPath();
+        // Draw a nice petal shape
+        this.ctx.moveTo(0, 0);
+        this.ctx.bezierCurveTo(p.size / 2, -p.size / 2, p.size, 0, 0, p.size);
+        this.ctx.bezierCurveTo(-p.size, 0, -p.size / 2, -p.size / 2, 0, 0);
+        this.ctx.fillStyle = p.color;
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowColor = "rgba(255, 192, 203, 0.5)";
+        this.ctx.fill();
+        this.ctx.restore();
     }
 
     animate() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        for (let i = 0; i < this.particles.length; i++) {
-            let p = this.particles[i];
-            
-            // Move
-            p.x += p.vx;
-            p.y += p.vy;
+        this.ctx.clearRect(0, 0, this.width, this.height);
 
-            // Bounce off edges
-            if (p.x < 0 || p.x > this.canvas.width) p.vx *= -1;
-            if (p.y < 0 || p.y > this.canvas.height) p.vy *= -1;
+        this.petals.forEach(p => {
+            // Fall down
+            p.y += p.speed;
+            // Sway side to side
+            p.x += Math.sin(p.swayOffset) * p.sway;
+            p.swayOffset += p.swaySpeed;
+            // Rotate
+            p.rotation += p.rotationSpeed;
 
-            // Mouse interaction
-            if (this.mouse.x != null) {
-                let dx = this.mouse.x - p.x;
-                let dy = this.mouse.y - p.y;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < this.mouse.radius) {
-                    const forceDirectionX = dx / distance;
-                    const forceDirectionY = dy / distance;
-                    const force = (this.mouse.radius - distance) / this.mouse.radius;
-                    const directionX = forceDirectionX * force * 2; // Push strength
-                    const directionY = forceDirectionY * force * 2;
+            // Mouse interaction (Wind effect)
+            const dx = this.mouse.x - p.x;
+            const dy = this.mouse.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const interactionRadius = 200;
 
-                    p.x -= directionX;
-                    p.y -= directionY;
-                }
+            if (dist < interactionRadius) {
+                const force = (interactionRadius - dist) / interactionRadius;
+                const angle = Math.atan2(dy, dx);
+                // Push away from mouse
+                p.x -= Math.cos(angle) * force * 5;
+                p.y -= Math.sin(angle) * force * 5;
+                p.rotation += force * 5;
             }
 
-            // Draw particle
-            this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            this.ctx.fillStyle = p.color;
-            this.ctx.fill();
-
-            // Connect particles
-            for (let j = i; j < this.particles.length; j++) {
-                let p2 = this.particles[j];
-                let dx = p.x - p2.x;
-                let dy = p.y - p2.y;
-                let distance = Math.sqrt(dx*dx + dy*dy);
-
-                if (distance < 100) {
-                    this.ctx.beginPath();
-                    this.ctx.strokeStyle = `rgba(139, 92, 246, ${1 - distance/100})`;
-                    this.ctx.lineWidth = 0.5;
-                    this.ctx.moveTo(p.x, p.y);
-                    this.ctx.lineTo(p2.x, p2.y);
-                    this.ctx.stroke();
-                }
+            // Reset if out of bounds
+            if (p.y > this.height + 20) {
+                Object.assign(p, this.createPetal());
             }
-        }
-        
+            if (p.x > this.width + 20) p.x = -20;
+            if (p.x < -20) p.x = this.width + 20;
+
+            this.drawPetal(p);
+        });
+
         requestAnimationFrame(() => this.animate());
     }
 }
 
-// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    new InteractiveBackground();
+    new AnimeBackground();
 });
