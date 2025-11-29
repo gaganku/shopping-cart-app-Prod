@@ -500,7 +500,20 @@ window.botMoveToModal = async function(modal, message = "Check out what I found!
 
 window.botReturnHome = async function() {
     const bot = document.querySelector('.cyber-bot');
-    if (!bot || !isMoving) return;
+    if (!bot) return;
+    
+    // Ensure we have a home position
+    if (!homePosition) {
+        // Recalculate if missing
+        const right = 20;
+        const bottom = 20;
+        homePosition = {
+            x: window.innerWidth - right - bot.offsetWidth,
+            y: window.innerHeight - bottom - bot.offsetHeight
+        };
+    }
+    
+    isMoving = true; // Force moving state
     
     bot.classList.remove('pointing-left');
     
