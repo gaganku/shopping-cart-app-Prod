@@ -42,7 +42,6 @@
                 <span id="user-display" style="font-weight: 600; color: var(--primary);"></span>
                 <a id="admin-link" href="admin.html" style="display: none; padding: 0.5rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; text-decoration: none; font-weight: 600; margin-right: 0.5rem;">🛡️ Admin</a>
                 <button id="download-btn" class="download-btn" onclick="window.app.downloadReport()" style="display: none;">Download Report</button>
-                <a href="profile.html" class="download-btn" style="display: inline-block; text-decoration: none; text-align: center;">👤 Profile</a>
                 <button class="delete-btn" onclick="window.app.showDeleteModal()">Delete Account</button>
                 <button class="logout-btn" onclick="window.app.logout()">Logout</button>
                 <div class="cart-icon desktop-cart" onclick="window.location.href='cart.html'">
@@ -53,6 +52,12 @@
                     </svg>
                     <span class="cart-count" id="cart-count">0</span>
                 </div>
+                <a href="profile.html" class="profile-icon" title="My Profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </a>
             </div>
         </div>
         <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>

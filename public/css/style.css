@@ -1154,3 +1154,30 @@ main {
 .menu-close-btn {
     display: none;
 }
+
+/* Profile Icon */
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    position: relative;
+}
+
+.profile-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+    border-color: var(--primary);
+}
+
+.profile-icon svg {
+    color: white;
+    stroke: white;
+}
+
