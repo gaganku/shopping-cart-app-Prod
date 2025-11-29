@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | ModernShop</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animated-bot.css">
+    <link rel="stylesheet" href="css/bot-animations.css">
+    <style>
+        body {
+            padding-top: 80px;
+            min-height: 100vh;
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .profile-header {
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius);
+            padding: 3rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 3rem;
+            align-items: center;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .profile-photo-section {
+            position: relative;
+        }
+
+        .profile-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .photo-upload-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--primary);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .photo-upload-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-email {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .order-card {
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            transition: all 0.3s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .order-id {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .order-date {
+            font-size: 0.9rem;
+            color: var(--accent);
+        }
+
+        .order-product {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .order-product-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .order-product-info {
+            flex: 1;
+        }
+
+        .order-product-name {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .order-product-price {
+            color: var(--primary);
+            font-weight: 900;
+            font-size: 1.2rem;
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .view-all-btn {
+            background: var(--gradient-main);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .view-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #photo-input {
+            display: none;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .action-btn {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <script src="js/background.js"></script>
+
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">ModernShop</a>
+            <div class="header-controls">
+                <a href="cart.html" class="cart-icon">
+                    🛒 Cart
+                </a>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-photo-section">
+                <img id="profile-photo" class="profile-photo" src="https://ui-avatars.com/api/?name=User&size=150&background=8b5cf6&color=fff" alt="Profile Photo">
+                <button class="photo-upload-btn" onclick="document.getElementById('photo-input').click()">
+                    📷
+                </button>
+                <input type="file" id="photo-input" accept="image/*" onchange="uploadPhoto(event)">
+            </div>
+
+            <div class="profile-info">
+                <h1 class="profile-name" id="display-name">Loading...</h1>
+                <p class="profile-email" id="user-email">Loading...</p>
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-orders">0</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-spent">$0</div>
+                        <div class="stat-label">Total Spent</div>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="action-btn" onclick="window.location.href='cart.html'">View Cart</button>
+                    <button class="action-btn" onclick="window.location.href='index.html'">Continue Shopping</button>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Recent Orders</h2>
+        <div id="orders-container">
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <p>Loading your orders...</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="orders.html" class="view-all-btn">View All Orders →</a>
+        </div>
+    </div>
+
+    <script src="js/bots.js"></script>
+    <script>
+        let currentUser = null;
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/status', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    currentUser = data.user;
+                    loadUserProfile();
+                } else {
+                    const sessionUser = sessionStorage.getItem('currentUser');
+                    if (sessionUser) {
+                        currentUser = { username: sessionUser };
+                        loadUserProfile();
+                    } else {
+                        window.location.href = '/login.html';
+                    }
+                }
+            } catch (err) {
+                console.error('Auth check failed:', err);
+                window.location.href = '/login.html';
+            }
+        }
+
+        async function loadUserProfile() {
+            document.getElementById('display-name').textContent = currentUser.displayName || currentUser.username;
+            document.getElementById('user-email').textContent = currentUser.email || 'No email provided';
+
+            // Update profile photo if available
+            if (currentUser.profilePhoto) {
+                document.getElementById('profile-photo').src = currentUser.profilePhoto;
+            } else {
+                const name = encodeURIComponent(currentUser.displayName || currentUser.username);
+                document.getElementById('profile-photo').src = `https://ui-avatars.com/api/?name=${name}&size=150&background=8b5cf6&color=fff`;
+            }
+
+            // Load orders
+            await loadOrders();
+        }
+
+        async function loadOrders() {
+            try {
+                const response = await fetch(`/api/user/orders`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch orders');
+                }
+
+                const orders = await response.json();
+                displayOrders(orders);
+                updateStats(orders);
+            } catch (err) {
+                console.error('Error loading orders:', err);
+                document.getElementById('orders-container').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Failed to load orders. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayOrders(orders) {
+            const container = document.getElementById('orders-container');
+            
+            if (!orders || orders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🛍️</div>
+                        <p>No orders yet. Start shopping to see your order history!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Show only the 6 most recent orders
+            const recentOrders = orders.slice(0, 6);
+            
+            container.innerHTML = `
+                <div class="orders-grid">
+                    ${recentOrders.map(order => `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <span class="order-id">Order #${order._id.slice(-8)}</span>
+                                <span class="order-date">${new Date(order.purchaseDate || order.createdAt).toLocaleDateString('en-US', { 
+                                    year: 'numeric', 
+                                    month: 'short', 
+                                    day: 'numeric'
+                                })}</span>
+                            </div>
+                            <div class="order-product">
+                                <img class="order-product-image" src="${order.productId?.image || 'https://via.placeholder.com/80'}" alt="${order.productId?.name || 'Product'}">
+                                <div class="order-product-info">
+                                    <div class="order-product-name">${order.productId?.name || 'Product Not Available'}</div>
+                                    <div class="order-product-price">$${(order.productId?.price || 0).toFixed(2)}</div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <span class="order-status">${order.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending'}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function updateStats(orders) {
+            const totalOrders = orders.length;
+            const totalSpent = orders.reduce((sum, order) => sum + (order.productId?.price || 0), 0);
+
+            document.getElementById('total-orders').textContent = totalOrders;
+            document.getElementById('total-spent').textContent = `$${totalSpent.toFixed(2)}`;
+        }
+
+        async function uploadPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size should be less than 5MB');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('profilePhoto', file);
+
+            try {
+                const response = await fetch('/api/user/profile-photo', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('profile-photo').src = data.photoUrl;
+                    alert('Profile photo updated successfully!');
+                } else {
+                    alert('Failed to upload photo. Please try again.');
+                }
+            } catch (err) {
+                console.error('Upload error:', err);
+                alert('Error uploading photo. Please try again.');
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+            } catch (err) {
+                console.error('Logout failed:', err);
+            } finally {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = '/login.html';
+            }
+        }
+
+        checkAuth();
+    </script>
+</body>
+</html>

@@ -1363,6 +1363,63 @@ app.put('/api/admin/users/:id', isAdmin, async (req, res) => {
     }
 });
 
+// User Profile Routes
+
+// Get user's orders
+app.get('/api/user/orders', isAuthenticated, async (req, res) => {
+    try {
+        const username = req.session.user || req.user?.username;
+        
+        if (!username) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const orders = await Order.find({ username })
+            .populate('productId')
+            .sort({ createdAt: -1 }); // Most recent first
+
+        res.json(orders);
+    } catch (err) {
+        console.error('Error fetching orders:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Upload profile photo
+app.post('/api/user/profile-photo', isAuthenticated, upload.single('profilePhoto'), async (req, res) => {
+    try {
+        const username = req.session.user || req.user?.username;
+        
+        if (!username) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // In production, you would upload to cloud storage (S3, Cloudinary, etc.)
+        // For now, we'll use the local file path
+        const photoUrl = `/uploads/${req.file.filename}`;
+        
+        user.profilePhoto = photoUrl;
+        await user.save();
+
+        res.json({ 
+            message: 'Profile photo uploaded successfully',
+            photoUrl 
+        });
+    } catch (err) {
+        console.error('Error uploading profile photo:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
