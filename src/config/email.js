@@ -7,7 +7,29 @@ const initializeEmailTransporter = async () => {
     const user = process.env.GMAIL_USER || process.env.EMAIL_USER;
     const pass = process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS;
 
-    if (user && pass) {
+    // 1. Check for Generic SMTP (Resend, SendGrid, etc.)
+    if (process.env.SMTP_HOST && process.env.SMTP_PASS) {
+        transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: process.env.SMTP_PORT || 465,
+            secure: true, // true for 465, false for other ports
+            auth: {
+                user: process.env.SMTP_USER || 'resend',
+                pass: process.env.SMTP_PASS
+            }
+        });
+        console.log('✅ SMTP configured (Resend/Provider)');
+        
+        try {
+            await transporter.verify();
+            console.log('✅ SMTP connection verified');
+        } catch (err) {
+            console.error('❌ SMTP verification failed:', err.message);
+            transporter = null;
+        }
+    }
+    // 2. Check if Gmail credentials are provided (Fallback)
+    else if (user && pass) {
         // Use Gmail for real emails
         transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -26,7 +48,7 @@ const initializeEmailTransporter = async () => {
             transporter = null;
         }
     } else {
-        // Fallback to Ethereal (Enable in Production too so users can see the link if Gmail fails)
+        // 3. Fallback to Ethereal
         console.log('Gmail credentials not found, using Ethereal test email...');
         try {
             const account = await nodemailer.createTestAccount();
