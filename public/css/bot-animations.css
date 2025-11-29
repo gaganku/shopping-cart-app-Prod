@@ -1,0 +1,33 @@
+/* Bot Walking Animation */
+.cyber-bot.walking {
+    animation: botWalk 0.5s ease-in-out infinite;
+}
+
+@keyframes botWalk {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Bot Pointing Animation */
+.cyber-bot.pointing-right::after {
+    content: '👉';
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    animation: point 0.5s ease-in-out infinite;
+}
+
+@keyframes point {
+    0%, 100% {
+        transform: translateY(-50%) translateX(0);
+    }
+    50% {
+        transform: translateY(-50%) translateX(5px);
+    }
+}

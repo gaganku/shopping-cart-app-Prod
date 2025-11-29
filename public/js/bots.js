@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     createBot();
     // Check for login status after a short delay to ensure bot is ready
     setTimeout(checkLoginStatus, 500);
+    // Start autonomous behavior
+    setTimeout(startAutonomousBehavior, 3000);
 });
 
 function createBot() {
@@ -25,7 +27,7 @@ function createBot() {
             </div>
         </div>
     `;
-
+    
     document.body.appendChild(botContainer);
     
     // Initialize interactions
@@ -304,4 +306,133 @@ function checkLoginStatus() {
             setTimeout(checkLoginStatus, 500);
         }
     }
+}
+
+// === NEW AUTONOMOUS MOVEMENT FEATURES ===
+
+let isMoving = false;
+let homePosition = null;
+
+function startAutonomousBehavior() {
+    const bot = document.querySelector('.cyber-bot');
+    if (!bot) return;
+    
+    // Save home position
+    const rect = bot.getBoundingClientRect();
+    homePosition = { x: rect.left, y: rect.top };
+    
+    // Start the behavior loop
+    recommendProducts();
+}
+
+async function recommendProducts() {
+    // Wait random time between 15-30 seconds
+    await sleep(Math.random() * 15000 + 15000);
+    
+    const bot = document.querySelector('.cyber-bot');
+    if (!bot || isMoving) {
+        recommendProducts(); // Try again
+        return;
+    }
+    
+    // Get all product cards
+    const productCards = Array.from(document.querySelectorAll('.product-card'));
+    
+    if (productCards.length > 0) {
+        // Pick a random product
+        const randomProduct = productCards[Math.floor(Math.random() * productCards.length)];
+        await walkToProduct(bot, randomProduct);
+    }
+    
+    // Continue the loop
+    recommendProducts();
+}
+
+async function walkToProduct(bot, productCard) {
+    if (isMoving) return;
+    isMoving = true;
+    
+    const phrases = [
+        "Check this out! 🔥",
+        "You'll love this one! ⭐",
+        "This is trending! 💯",
+        "Great deal here! 💰",
+        "Don't miss this! ✨",
+        "Perfect choice! 🎯"
+    ];
+    
+    // Get product position
+    const productRect = productCard.getBoundingClientRect();
+    const botRect = bot.getBoundingClientRect();
+    
+    // Target position (to the left of the product)
+    const targetX = productRect.left - 120;
+    const targetY = productRect.top + (productRect.height / 2) - (botRect.height / 2);
+    
+    // Add walking class
+    bot.classList.add('walking');
+    
+    // Animate movement
+    await animateMovement(bot, targetX, targetY);
+    
+    // Stop walking
+    bot.classList.remove('walking');
+    
+    // Point with speech bubble
+    bot.classList.add('pointing-right');
+    const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+    showBubble(bot, phrase);
+    
+    // Wait while pointing
+    await sleep(4000);
+    
+    // Remove pointing
+    bot.classList.remove('pointing-right');
+    
+    // Return home
+    bot.classList.add('walking');
+    await animateMovement(bot, homePosition.x, homePosition.y);
+    bot.classList.remove('walking');
+    
+    isMoving = false;
+}
+
+async function animateMovement(bot, targetX, targetY) {
+    const startRect = bot.getBoundingClientRect();
+    const startX = startRect.left;
+    const startY = startRect.top;
+    const duration = 2000;
+    const startTime = Date.now();
+    
+    return new Promise(resolve => {
+        function animate() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing
+            const easeProgress = easeInOutCubic(progress);
+            
+            const currentX = startX + (targetX - startX) * easeProgress;
+            const currentY = startY + (targetY - startY) * easeProgress;
+            
+            bot.style.left = `${currentX}px`;
+            bot.style.top = `${currentY}px`;
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                resolve();
+            }
+        }
+        
+        animate();
+    });
+}
+
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
