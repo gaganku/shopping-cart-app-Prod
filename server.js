@@ -217,8 +217,10 @@ app.get('/auth/google/callback',
                     const etherealUrl = nodemailer.getTestMessageUrl(info);
                     if (etherealUrl) {
                         console.log('Google OTP email sent: %s', etherealUrl);
-                        const { exec } = require('child_process');
-                        exec(`start ${etherealUrl}`);
+                        if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
+                            const { exec } = require('child_process');
+                            exec(`start ${etherealUrl}`);
+                        }
                     }
                 } catch (emailErr) {
                     console.error('Error sending Google OTP:', emailErr);
@@ -469,8 +471,10 @@ app.post('/api/signup', async (req, res) => {
                 
                 // Auto-open the Ethereal email in browser
                 if (etherealUrl) {
-                    const { exec } = require('child_process');
-                    exec(`start ${etherealUrl}`);
+                    if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
+                        const { exec } = require('child_process');
+                        exec(`start ${etherealUrl}`);
+                    }
                 }
             } catch (emailErr) {
                 console.error('Error sending verification email:', emailErr);
@@ -679,8 +683,10 @@ app.post('/api/auth/otp/request', async (req, res) => {
             if (etherealUrl) {
                 console.log('OTP email sent: %s', etherealUrl);
                 // Auto-open for dev convenience
-                 const { exec } = require('child_process');
-                 exec(`start ${etherealUrl}`);
+                if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
+                     const { exec } = require('child_process');
+                     exec(`start ${etherealUrl}`);
+                }
             }
         }
 
@@ -964,9 +970,11 @@ app.post('/api/orders/:orderId/confirm', async (req, res) => {
                 const etherealUrl = nodemailer.getTestMessageUrl(confirmationEmail);
                 if (etherealUrl) {
                     console.log(`Test email preview: ${etherealUrl}`);
-                    // Auto-open test email in browser
-                    const { exec } = require('child_process');
-                    exec(`start ${etherealUrl}`);
+                    // Only auto-open in local development on Windows
+                    if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
+                        const { exec } = require('child_process');
+                        exec(`start ${etherealUrl}`);
+                    }
                 } else {
                     // Real email sent via Gmail
                     console.log(`Order confirmation email sent to ${user.email}`);
