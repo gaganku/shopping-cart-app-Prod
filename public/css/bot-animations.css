@@ -31,3 +31,23 @@
         transform: translateY(-50%) translateX(5px);
     }
 }
+
+/* Bot Pointing Left Animation */
+.cyber-bot.pointing-left::before {
+    content: '👈';
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    animation: pointLeft 0.5s ease-in-out infinite;
+}
+
+@keyframes pointLeft {
+    0%, 100% {
+        transform: translateY(-50%) translateX(0);
+    }
+    50% {
+        transform: translateY(-50%) translateX(-5px);
+    }
+}

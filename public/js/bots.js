@@ -436,3 +436,52 @@ function easeInOutCubic(t) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// === MODAL INTERACTION ===
+
+// Global functions for modal interaction
+window.botMoveToModal = async function(modal) {
+    const bot = document.querySelector('.cyber-bot');
+    if (!bot || isMoving) return;
+    
+    isMoving = true;
+    
+    // Stop autonomous behavior temporarily
+    clearTimeout(window.autonomousTimeout);
+    
+    const modalContent = modal.querySelector('.product-detail-content');
+    if (!modalContent) {
+        isMoving = false;
+        return;
+    }
+    
+    const modalRect = modalContent.getBoundingClientRect();
+    
+    // Position to the right of the modal
+    const targetX = modalRect.right + 20;
+    const targetY = modalRect.top + 50;
+    
+    bot.classList.add('walking');
+    await animateMovement(bot, targetX, targetY);
+    bot.classList.remove('walking');
+    
+    // Point at modal
+    bot.classList.add('pointing-left');
+    showBubble(bot, "Check out what I found! 🔍");
+};
+
+window.botReturnHome = async function() {
+    const bot = document.querySelector('.cyber-bot');
+    if (!bot || !isMoving) return;
+    
+    bot.classList.remove('pointing-left');
+    
+    bot.classList.add('walking');
+    await animateMovement(bot, homePosition.x, homePosition.y);
+    bot.classList.remove('walking');
+    
+    isMoving = false;
+    
+    // Resume autonomous behavior
+    window.autonomousTimeout = setTimeout(recommendProducts, Math.random() * 15000 + 15000);
+};
