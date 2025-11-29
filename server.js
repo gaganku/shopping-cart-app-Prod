@@ -900,10 +900,20 @@ app.post('/api/orders/:orderId/confirm', async (req, res) => {
             return res.status(404).json({ error: 'User or product not found' });
         }
 
-        // Send order confirmation email
+        // ✅ FIRST: Mark order as confirmed and update status (ALWAYS HAPPENS)
+        order.status = 'confirmed';
+        order.purchaseDate = new Date();
+        await order.save();
+
+        console.log(`✅ Order ${orderId} confirmed and saved to database`);
+
+        // ✅ THEN: Try to send email (OPTIONAL - won't rollback order if it fails)
+        let emailSent = false;
+        let emailError = null;
+
         if (user.email && transporter) {
             try {
-                const orderDate = new Date(order.date).toLocaleDateString('en-US', { 
+                const orderDate = new Date(order.purchaseDate).toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric',
@@ -979,19 +989,24 @@ app.post('/api/orders/:orderId/confirm', async (req, res) => {
                     console.log(`Order confirmation email sent to ${user.email}`);
                 }
 
-                // Delete the order from cart after email is sent
-                await Order.findByIdAndDelete(orderId);
-
-                res.json({ message: 'Order confirmed and email sent', productName: product.name });
+                emailSent = true;
             } catch (emailErr) {
-                console.error('Failed to send confirmation email:', emailErr);
-                res.status(500).json({ error: 'Failed to send confirmation email' });
+                console.error('⚠️ Failed to send confirmation email (order still confirmed):', emailErr);
+                emailError = emailErr.message;
+                // Order is still confirmed - don't throw error
             }
         } else {
-            // Delete order even if no email (for users without email)
-            await Order.findByIdAndDelete(orderId);
-            res.json({ message: 'Order confirmed (no email sent - missing user email or transporter)' });
+            console.log('⚠️ No email sent - missing user email or transporter (order still confirmed)');
         }
+
+        // Return success response (order is confirmed regardless of email status)
+        res.json({ 
+            message: emailSent ? 'Order confirmed and email sent' : 'Order confirmed (email failed)',
+            productName: product.name,
+            orderStatus: 'confirmed',
+            emailSent,
+            emailError
+        });
     } catch (err) {
         console.error('Error confirming order:', err);
         res.status(500).json({ error: 'Server error' });
