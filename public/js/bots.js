@@ -440,7 +440,7 @@ function sleep(ms) {
 // === MODAL INTERACTION ===
 
 // Global functions for modal interaction
-window.botMoveToModal = async function(modal) {
+window.botMoveToModal = async function(modal, message = "Check out what I found! 🔍") {
     const bot = document.querySelector('.cyber-bot');
     if (!bot || isMoving) return;
     
@@ -449,8 +449,13 @@ window.botMoveToModal = async function(modal) {
     // Stop autonomous behavior temporarily
     clearTimeout(window.autonomousTimeout);
     
-    const modalContent = modal.querySelector('.product-detail-content');
+    // Try to find the content container
+    const modalContent = modal.querySelector('.product-detail-content') || 
+                        modal.querySelector('.modal-card') || 
+                        modal.querySelector('.modal-content');
+                        
     if (!modalContent) {
+        console.warn('No modal content found for bot target');
         isMoving = false;
         return;
     }
@@ -467,7 +472,7 @@ window.botMoveToModal = async function(modal) {
     
     // Point at modal
     bot.classList.add('pointing-left');
-    showBubble(bot, "Check out what I found! 🔍");
+    showBubble(bot, message);
 };
 
 window.botReturnHome = async function() {

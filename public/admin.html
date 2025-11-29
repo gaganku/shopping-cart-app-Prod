@@ -1389,6 +1389,11 @@
             });
 
             modal.classList.add('active');
+
+            // Trigger bot warning
+            if (window.botMoveToModal) {
+                window.botMoveToModal(modal, "⚠️ Wait! This will permanently delete these users! Are you sure? 🗑️");
+            }
         }
 
         // Hide modal
@@ -1396,6 +1401,11 @@
             const modal = document.getElementById('delete-modal');
             modal.classList.remove('active');
             pendingDeleteData = null;
+
+            // Return bot to home
+            if (window.botReturnHome) {
+                window.botReturnHome();
+            }
         }
 
         // Edit User Modal Logic
