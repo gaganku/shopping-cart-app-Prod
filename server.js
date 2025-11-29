@@ -1381,6 +1381,7 @@ app.put('/api/admin/users/:id', isAdmin, async (req, res) => {
 // User Profile Routes
 
 // Get user's orders
+// Get user's orders
 app.get('/api/user/orders', isAuthenticated, async (req, res) => {
     try {
         const username = req.session.user || req.user?.username;
@@ -1390,10 +1391,19 @@ app.get('/api/user/orders', isAuthenticated, async (req, res) => {
         }
 
         const orders = await Order.find({ username })
-            .populate('productId')
-            .sort({ createdAt: -1 }); // Most recent first
+            .sort({ createdAt: -1 })
+            .lean(); // Use lean() for better performance and to allow modification
 
-        res.json(orders);
+        // Manually populate product details
+        const populatedOrders = await Promise.all(orders.map(async (order) => {
+            const product = await Product.findOne({ id: order.productId });
+            return {
+                ...order,
+                productId: product || null // Replace productId number with product object (or null)
+            };
+        }));
+
+        res.json(populatedOrders);
     } catch (err) {
         console.error('Error fetching orders:', err);
         res.status(500).json({ error: 'Server error' });
