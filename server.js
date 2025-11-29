@@ -842,12 +842,6 @@ app.post('/api/purchase', async (req, res) => {
     try {
         const { username, productId } = req.body;
         
-        // Check global limit
-        const existingOrder = await Order.findOne({ username });
-        if (existingOrder) {
-            return res.status(400).json({ error: 'You can only buy one item in total!' });
-        }
-
         // Check if user is verified by admin (skip for admins)
         const user = await User.findOne({ username });
         
@@ -1013,19 +1007,23 @@ app.post('/api/orders/:orderId/confirm', async (req, res) => {
     }
 });
 
-// Get user's order (cart)
+// Get user's orders (cart) - only pending orders
 app.get('/api/orders/:username', async (req, res) => {
     try {
         const { username } = req.params;
-        const order = await Order.findOne({ username });
+        // Find all orders that are NOT confirmed (pending or no status)
+        const orders = await Order.find({ 
+            username,
+            $or: [
+                { status: 'pending' },
+                { status: { $exists: false } },
+                { status: null }
+            ]
+        });
         
-        if (order) {
-            res.json({ order });
-        } else {
-            res.json({ order: null });
-        }
+        res.json({ orders });
     } catch (err) {
-        console.error('Error fetching order:', err);
+        console.error('Error fetching orders:', err);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -1390,7 +1388,10 @@ app.get('/api/user/orders', isAuthenticated, async (req, res) => {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        const orders = await Order.find({ username })
+        const orders = await Order.find({ 
+            username,
+            status: 'confirmed' // Only show confirmed orders in order history
+        })
             .sort({ createdAt: -1 })
             .lean(); // Use lean() for better performance and to allow modification
 
