@@ -3,19 +3,30 @@ const nodemailer = require('nodemailer');
 let transporter;
 
 const initializeEmailTransporter = async () => {
-    // Check if Gmail credentials are provided
-    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    // Check if Gmail credentials are provided (support both naming conventions)
+    const user = process.env.GMAIL_USER || process.env.EMAIL_USER;
+    const pass = process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS;
+
+    if (user && pass) {
         // Use Gmail for real emails
         transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.GMAIL_USER,
-                pass: process.env.GMAIL_APP_PASSWORD
+                user: user,
+                pass: pass
             }
         });
-        console.log('Gmail SMTP configured for sending real emails');
-    } else if (process.env.NODE_ENV !== 'production') {
-        // Fallback to Ethereal for testing (ONLY in development)
+        
+        // Verify connection
+        try {
+            await transporter.verify();
+            console.log('✅ Gmail SMTP configured and verified');
+        } catch (err) {
+            console.error('❌ Gmail SMTP verification failed:', err.message);
+            transporter = null;
+        }
+    } else {
+        // Fallback to Ethereal (Enable in Production too so users can see the link if Gmail fails)
         console.log('Gmail credentials not found, using Ethereal test email...');
         try {
             const account = await nodemailer.createTestAccount();
@@ -31,10 +42,8 @@ const initializeEmailTransporter = async () => {
             console.log('Ethereal Email configured (test mode)');
         } catch (err) {
             console.error('Failed to create test account:', err);
+            transporter = null;
         }
-    } else {
-        console.log('Email disabled in production (credentials missing)');
-        transporter = null;
     }
     return transporter;
 };
