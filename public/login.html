@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | ModernShop</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animated-bot.css">
+    <link rel="stylesheet" href="css/bot-animations.css">
     <style>
         :root {
             --primary: #8b5cf6;
@@ -353,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await resp.json();
             if (data.authenticated) {
                 sessionStorage.removeItem('currentUser');
-                window.location.href = '/index.html';
+                window.location.href = 'http://localhost:3000/index.html';
             }
         } catch (e) {
             console.error('OAuth status check failed:', e);
@@ -465,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     show2FAModal();
                 } else {
                     sessionStorage.setItem('currentUser', username);
-                    window.location.href = 'index.html';
+                    window.location.href = 'http://localhost:3000/index.html';
                 }
             } else {
                 alert(data.error || 'Login failed');
@@ -487,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 sessionStorage.setItem('currentUser', data.username);
-                window.location.href = 'index.html';
+                window.location.href = 'http://localhost:3000/index.html';
             } else {
                 alert(data.error || 'Verification failed');
             }
