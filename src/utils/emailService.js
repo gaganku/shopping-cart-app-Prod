@@ -33,12 +33,16 @@ const sendOTPEmail = async (email, otp, purpose = 'login') => {
         const etherealUrl = nodemailer.getTestMessageUrl(info);
         if (etherealUrl) {
             console.log('OTP email sent: %s', etherealUrl);
-            // Auto-open for dev convenience
-            const { exec } = require('child_process');
-            exec(`start ${etherealUrl}`);
+            // Only auto-open in local development on Windows
+            if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
+                const { exec } = require('child_process');
+                exec(`start ${etherealUrl}`);
+            }
         }
+        return etherealUrl;
     } catch (error) {
         console.error('Error sending OTP email:', error);
+        return null;
     }
 };
 

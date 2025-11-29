@@ -416,6 +416,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     pendingUserId = data.userId;
                     const modalText = document.querySelector('#modal-2fa .modal-text');
                     if (modalText) modalText.textContent = data.message;
+                    
+                    // Show preview link if available (Dev Mode)
+                    if (data.previewUrl) {
+                        let previewLink = document.getElementById('otp-preview-link');
+                        if (!previewLink) {
+                            previewLink = document.createElement('a');
+                            previewLink.id = 'otp-preview-link';
+                            previewLink.target = '_blank';
+                            previewLink.style.display = 'block';
+                            previewLink.style.marginTop = '10px';
+                            previewLink.style.color = '#667eea';
+                            previewLink.style.fontWeight = 'bold';
+                            previewLink.style.textDecoration = 'none';
+                            document.querySelector('#modal-2fa .modal-content').appendChild(previewLink);
+                        }
+                        previewLink.href = data.previewUrl;
+                        previewLink.textContent = 'View Test Email (Dev Mode)';
+                    }
+
                     show2FAModal();
                 } else {
                     sessionStorage.setItem('currentUser', username);

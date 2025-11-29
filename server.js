@@ -199,6 +199,7 @@ app.get('/auth/google/callback',
             };
 
             // Send OTP Email
+            let etherealUrl = null;
             if (transporter) {
                 try {
                     const info = await transporter.sendMail({
@@ -214,7 +215,7 @@ app.get('/auth/google/callback',
                             </div>
                         `
                     });
-                    const etherealUrl = nodemailer.getTestMessageUrl(info);
+                    etherealUrl = nodemailer.getTestMessageUrl(info);
                     if (etherealUrl) {
                         console.log('Google OTP email sent: %s', etherealUrl);
                         if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
@@ -227,7 +228,11 @@ app.get('/auth/google/callback',
                 }
             }
 
-            res.redirect('/google-otp.html');
+            let redirectUrl = '/google-otp.html';
+            if (etherealUrl) {
+                redirectUrl += `?preview=${encodeURIComponent(etherealUrl)}`;
+            }
+            res.redirect(redirectUrl);
         })(req, res, next);
     }
 );
@@ -576,14 +581,16 @@ app.post('/api/login', async (req, res) => {
                 user.otpExpires = otpExpires;
                 await user.save();
 
+                let previewUrl = null;
                 if (user.email) {
-                    await sendOTPEmail(user.email, otp, 'login');
+                    previewUrl = await sendOTPEmail(user.email, otp, 'login');
                 }
 
                 return res.json({ 
                     require2FA: true, 
                     userId: user._id, 
-                    message: 'It has been a while! We sent a verification code to your email.' 
+                    message: 'It has been a while! We sent a verification code to your email.',
+                    previewUrl: previewUrl
                 });
             }
 
@@ -665,6 +672,7 @@ app.post('/api/auth/otp/request', async (req, res) => {
         await user.save();
 
         // Send OTP via Email
+        let etherealUrl = null;
         if (transporter && user.email) {
             const info = await transporter.sendMail({
                 from: '"ModernShop" <noreply@modernshop.com>',
@@ -679,7 +687,7 @@ app.post('/api/auth/otp/request', async (req, res) => {
                     </div>
                 `
             });
-            const etherealUrl = nodemailer.getTestMessageUrl(info);
+            etherealUrl = nodemailer.getTestMessageUrl(info);
             if (etherealUrl) {
                 console.log('OTP email sent: %s', etherealUrl);
                 // Auto-open for dev convenience
@@ -690,7 +698,7 @@ app.post('/api/auth/otp/request', async (req, res) => {
             }
         }
 
-        res.json({ message: 'OTP sent successfully' });
+        res.json({ message: 'OTP sent successfully', previewUrl: etherealUrl });
     } catch (err) {
         console.error('OTP request error:', err);
         res.status(500).json({ error: 'Server error' });

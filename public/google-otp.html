@@ -149,6 +149,22 @@
                 verifyBtn.disabled = false;
             }
         });
+
+        // Check for preview URL in query params (for dev/test mode)
+        const urlParams = new URLSearchParams(window.location.search);
+        const previewUrl = urlParams.get('preview');
+        if (previewUrl) {
+            const previewLink = document.createElement('a');
+            previewLink.href = previewUrl;
+            previewLink.target = '_blank';
+            previewLink.style.display = 'block';
+            previewLink.style.marginTop = '1rem';
+            previewLink.style.color = '#facc15'; // Yellow
+            previewLink.style.textDecoration = 'none';
+            previewLink.style.fontWeight = 'bold';
+            previewLink.textContent = 'View Test Email (Dev Mode)';
+            document.querySelector('.card').appendChild(previewLink);
+        }
     </script>
 </body>
 </html>
