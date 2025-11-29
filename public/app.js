@@ -278,6 +278,11 @@ class ShoppingCartApp {
                 this.cartCount++;
                 this.updateCartCount();
                 
+                // PARTY TIME! 🎉
+                if (window.triggerParty) {
+                    window.triggerParty();
+                }
+                
                 // Show success toast
                 this.showToast(`Added ${data.productName} to cart!`);
                 
@@ -420,6 +425,11 @@ async function confirmOrder() {
         if (response.ok) {
             window.app.cartCount++;
             window.app.updateCartCount();
+            
+            // PARTY TIME! 🎉
+            if (window.triggerParty) {
+                window.triggerParty();
+            }
             
             // Show success modal
             document.getElementById('purchase-product-name').textContent = `You've successfully purchased ${productName}! Check your email for order confirmation.`;

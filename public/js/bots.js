@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     createBot();
     // Check for login status after a short delay to ensure bot is ready
     setTimeout(checkLoginStatus, 500);
-    // Start autonomous behavior
-    setTimeout(startAutonomousBehavior, 3000);
+    // Start autonomous behavior - DISABLED
+    // setTimeout(startAutonomousBehavior, 3000);
 });
 
 function createBot() {
