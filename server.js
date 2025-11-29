@@ -23,7 +23,7 @@ app.set('trust proxy', 1);
 
 // CORS Configuration
 app.use(cors({
-    origin: process.env.BASE_URL || 'http://localhost:3000',
+    origin: process.env.BASE_URL || 'https://shopping-cart-prod.vercel.app',
     credentials: true
 }));
 app.use(bodyParser.json());
