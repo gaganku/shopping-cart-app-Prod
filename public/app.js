@@ -399,6 +399,15 @@ window.app = new ShoppingCartApp();
 function closeOrderConfirmation() {
     document.getElementById('order-confirmation-modal').style.display = 'none';
     window.pendingOrder = null;
+    if (window.botReturnHome) window.botReturnHome();
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal-overlay')) {
+        event.target.style.display = "none";
+        if (window.botReturnHome) window.botReturnHome();
+    }
 }
 
 async function confirmOrder() {
