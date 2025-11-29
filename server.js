@@ -1283,9 +1283,13 @@ app.post('/api/admin/users/bulk-delete', isAdmin, async (req, res) => {
             return res.status(400).json({ error: 'No user IDs provided' });
         }
 
-        // Prevent deleting the main admin account
+        // Prevent deleting the main admin account (if it exists)
         const adminUser = await User.findOne({ username: 'admin' });
-        const filteredIds = userIds.filter(id => id !== adminUser._id.toString());
+        let filteredIds = userIds;
+        
+        if (adminUser) {
+            filteredIds = userIds.filter(id => id !== adminUser._id.toString());
+        }
 
         // Get usernames for the users to be deleted
         const usersToDelete = await User.find({ _id: { $in: filteredIds } });
@@ -1315,7 +1319,7 @@ app.post('/api/admin/users/bulk-delete', isAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error('Error deleting users:', err);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Server error: ' + err.message });
     }
 });
 
