@@ -90,8 +90,8 @@ class ShoppingCartApp {
     }
 
     renderProducts() {
-        this.productsContainer.innerHTML = this.products.map(product => `
-            <article class="product-card">
+        this.productsContainer.innerHTML = this.products.map((product, index) => `
+            <article class="product-card scroll-reveal" style="transition-delay: ${index * 100}ms">
                 <div class="product-image-wrapper">
                     <img src="${product.image}" alt="${product.name}" class="product-image" loading="lazy">
                 </div>
@@ -104,7 +104,7 @@ class ShoppingCartApp {
                             ${this.getStockLabel(product.stock)}
                         </span>
                     </div>
-                    <button class="buy-btn" 
+                    <button class="buy-btn ripple-btn" 
                         onclick="window.app.addToCart(${product.id})"
                         ${product.stock === 0 ? 'disabled' : ''}>
                         ${product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
@@ -112,6 +112,44 @@ class ShoppingCartApp {
                 </div>
             </article>
         `).join('');
+        
+        this.initScrollReveal();
+        this.initRippleEffect();
+    }
+
+    initScrollReveal() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+    }
+
+    initRippleEffect() {
+        document.querySelectorAll('.ripple-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const circle = document.createElement('span');
+                const diameter = Math.max(this.clientWidth, this.clientHeight);
+                const radius = diameter / 2;
+
+                circle.style.width = circle.style.height = `${diameter}px`;
+                circle.style.left = `${e.clientX - this.getBoundingClientRect().left - radius}px`;
+                circle.style.top = `${e.clientY - this.getBoundingClientRect().top - radius}px`;
+                circle.classList.add('ripple');
+
+                const ripple = this.getElementsByClassName('ripple')[0];
+                if (ripple) {
+                    ripple.remove();
+                }
+
+                this.appendChild(circle);
+            });
+        });
     }
 
     getStockStatusClass(stock) {
