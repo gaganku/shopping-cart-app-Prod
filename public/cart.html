@@ -168,10 +168,15 @@
             `;
             
             document.getElementById('confirm-order-modal').style.display = 'flex';
+            
+            if (window.botMoveToModal) {
+                window.botMoveToModal(document.getElementById('confirm-order-modal'), "Almost there! Just confirm to get your goodies! 📦✨");
+            }
         }
 
         function closeConfirmOrderModal() {
             document.getElementById('confirm-order-modal').style.display = 'none';
+            if (window.botReturnHome) window.botReturnHome();
         }
 
         async function finalizeOrder() {
@@ -206,11 +211,16 @@
         function showRemoveModal(orderId) {
             currentOrderId = orderId;
             document.getElementById('remove-modal').style.display = 'flex';
+            
+            if (window.botMoveToModal) {
+                window.botMoveToModal(document.getElementById('remove-modal'), "Are you sure you want to remove this? 🥺");
+            }
         }
 
         function closeRemoveModal() {
             currentOrderId = null;
             document.getElementById('remove-modal').style.display = 'none';
+            if (window.botReturnHome) window.botReturnHome();
         }
 
         async function confirmRemove() {
