@@ -101,36 +101,63 @@
                 const container = document.getElementById('cart-items-container');
                 const emptyCart = document.getElementById('empty-cart');
 
-                if (data.order) {
-                    window.currentOrder = data.order;
-                    
+                if (data.orders && data.orders.length > 0) {
+                    // Fetch all products
                     const productResponse = await fetch('/api/products');
                     const products = await productResponse.json();
-                    const product = products.find(p => p.id === data.order.productId);
-                    window.currentProduct = product;
+                    
+                    // Calculate total
+                    let totalPrice = 0;
+                    const cartItemsHTML = data.orders.map(order => {
+                        const product = products.find(p => p.id === order.productId);
+                        if (product) {
+                            totalPrice += product.price;
+                        }
+                        
+                        return `
+                            <div class="cart-item" style="background: var(--surface); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem;">
+                                <div style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+                                    ${product ? `<img src="${product.image}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px; border: 2px solid rgba(139, 92, 246, 0.3);">` : ''}
+                                    <div style="flex: 1; min-width: 200px;">
+                                        <h3 style="font-size: 1.5rem; margin: 0 0 0.5rem 0; color: white;">${order.productName}</h3>
+                                        <p style="color: var(--text-light); margin: 0 0 0.5rem 0;">Added on ${new Date(order.date || order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                        ${product ? `<p style="color: var(--primary); font-weight: 900; font-size: 1.5rem; margin: 0.5rem 0 0 0;">$${product.price.toFixed(2)}</p>` : ''}
+                                    </div>
+                                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                        <button class="modal-btn modal-btn-primary" onclick="confirmSingleOrder('${order._id}')" style="margin: 0; white-space: nowrap;">
+                                            ✅ Confirm
+                                        </button>
+                                        <button class="modal-btn modal-btn-danger" onclick="showRemoveModal('${order._id}')" style="margin: 0;">
+                                            🗑️ Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
                     
                     container.innerHTML = `
-                        <div class="cart-item" style="background: var(--surface); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                                <div>
-                                    <h3 style="font-size: 1.5rem; margin: 0 0 0.5rem 0; color: white;">${data.order.productName}</h3>
-                                    <p style="color: var(--text-light); margin: 0;">Added on ${new Date(data.order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                    ${product ? `<p style="color: var(--primary); font-weight: 700; font-size: 1.2rem; margin-top: 1rem;">$${product.price.toFixed(2)}</p>` : ''}
-                                </div>
-                                <button class="modal-btn modal-btn-danger" onclick="showRemoveModal('${data.order._id}')" style="margin: 0;">
-                                    Remove
-                                </button>
+                        ${cartItemsHTML}
+                        <div style="background: rgba(139, 92, 246, 0.1); border: 2px solid rgba(139, 92, 246, 0.4); border-radius: 16px; padding: 2rem; margin: 2rem 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                <span style="font-size: 1.5rem; font-weight: 700; color: white;">Total:</span>
+                                <span style="font-size: 2rem; font-weight: 900; color: var(--primary);">$${totalPrice.toFixed(2)}</span>
                             </div>
+                            <button onclick="confirmAllOrders()" style="width: 100%; padding: 1.5rem; background: var(--gradient-main); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);">
+                                📧 Confirm All Orders (${data.orders.length} ${data.orders.length === 1 ? 'item' : 'items'})
+                            </button>
                         </div>
-                        <button onclick="showConfirmOrderModal()" style="width: 100%; padding: 1.5rem; background: var(--gradient-main); color: white; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-bottom: 2rem; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);">
-                            📧 Confirm Order & Send Email
-                        </button>
                         <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 1.5rem;">
                             <p style="margin: 0; color: var(--primary); font-weight: 600;">
-                                ℹ️ Click "Confirm Order" to finalize your purchase and receive an email confirmation.
+                                ℹ️ Click "Confirm" on individual items or "Confirm All Orders" to finalize your purchases.
                             </p>
                         </div>
                     `;
+                    
+                    // Store orders globally for confirmation
+                    window.cartOrders = data.orders;
+                    window.cartProducts = products;
+                    
                     container.style.display = 'block';
                     emptyCart.style.display = 'none';
                 } else {
@@ -207,6 +234,58 @@
             } catch (err) {
                 console.error('Failed to confirm order:', err);
                 showToast('Failed to confirm order');
+            }
+        }
+
+        async function confirmSingleOrder(orderId) {
+            try {
+                const response = await fetch(`/api/orders/${orderId}/confirm`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('Order confirmed! ✅');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showToast(data.error || 'Failed to confirm order');
+                }
+            } catch (err) {
+                console.error('Failed to confirm order:', err);
+                showToast('Failed to confirm order');
+            }
+        }
+
+        async function confirmAllOrders() {
+            if (!window.cartOrders || window.cartOrders.length === 0) {
+                showToast('No orders to confirm');
+                return;
+            }
+
+            const confirmBtn = event.target;
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Confirming...';
+
+            try {
+                // Confirm all orders sequentially
+                for (const order of window.cartOrders) {
+                    await fetch(`/api/orders/${order._id}/confirm`, {
+                        method: 'POST'
+                    });
+                }
+
+                showToast(`All ${window.cartOrders.length} orders confirmed! ✅`);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to confirm orders:', err);
+                showToast('Failed to confirm some orders');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = `📧 Confirm All Orders (${window.cartOrders.length} items)`;
             }
         }
 
