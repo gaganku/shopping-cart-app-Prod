@@ -578,6 +578,9 @@ window.botReturnHome = async function() {
     await animateMovement(bot, homePosition.x, homePosition.y);
     bot.classList.remove('walking');
     
+    // Clear saved position so it defaults to home on next load
+    localStorage.removeItem('botPosition');
+    
     isMoving = false;
     
     // Resume autonomous behavior
