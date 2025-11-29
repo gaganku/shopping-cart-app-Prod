@@ -51,3 +51,60 @@
         transform: translateY(-50%) translateX(-5px);
     }
 }
+
+/* Crying Animation */
+.cyber-bot .tear {
+    position: absolute;
+    top: 40px; /* Below eye */
+    left: 20px; /* Left eye */
+    width: 6px;
+    height: 8px;
+    background: #00BFFF;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; /* Teardrop shape */
+    opacity: 0;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.cyber-bot .tear:nth-child(2) {
+    left: 50px; /* Right eye */
+    animation-delay: 0.5s;
+}
+
+.cyber-bot.crying .tear {
+    animation: tearDrop 1.5s infinite;
+}
+
+.cyber-bot.crying .bot-eye {
+    background-color: #00BFFF;
+    box-shadow: 0 0 10px #00BFFF;
+    height: 6px;
+    margin-top: 4px;
+    border-radius: 4px;
+    transform: rotate(10deg);
+}
+
+.cyber-bot.crying .bot-eye.right {
+    transform: rotate(-10deg);
+}
+
+@keyframes tearDrop {
+    0% {
+        top: 40px;
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    20% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    80% {
+        top: 100px;
+        opacity: 0.5;
+    }
+    100% {
+        top: 110px;
+        opacity: 0;
+        transform: scale(0.5);
+    }
+}

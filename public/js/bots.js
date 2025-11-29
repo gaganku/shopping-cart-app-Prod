@@ -45,6 +45,8 @@ function createBot() {
                     <div class="bot-eye right"></div>
                 </div>
             </div>
+            <div class="tear"></div>
+            <div class="tear"></div>
         </div>
     `;
     
@@ -55,6 +57,46 @@ function createBot() {
     setupPageSpecificInteractions(botContainer);
     makeBotDraggable(botContainer);
     startBlinking();
+    
+    // Setup negative interactions (crying)
+    setInterval(setupNegativeButtonInteractions, 2000); // Check periodically for new buttons
+}
+
+window.startCrying = function() {
+    const bot = document.querySelector('.cyber-bot');
+    if (bot) {
+        bot.classList.add('crying');
+        showBubble(bot, "Please don't! 😢");
+    }
+};
+
+window.stopCrying = function() {
+    const bot = document.querySelector('.cyber-bot');
+    if (bot) {
+        bot.classList.remove('crying');
+        hideBubble(bot);
+    }
+};
+
+function setupNegativeButtonInteractions() {
+    const negativeSelectors = [
+        '.modal-btn-danger',
+        '.modal-btn-secondary',
+        'button[onclick*="delete"]',
+        'button[onclick*="remove"]',
+        'button[onclick*="cancel"]',
+        '.upload-btn[style*="var(--danger)"]'
+    ];
+    
+    const buttons = document.querySelectorAll(negativeSelectors.join(','));
+    
+    buttons.forEach(btn => {
+        if (!btn.dataset.hasCryingEffect) {
+            btn.addEventListener('mouseenter', window.startCrying);
+            btn.addEventListener('mouseleave', window.stopCrying);
+            btn.dataset.hasCryingEffect = 'true';
+        }
+    });
 }
 
 function makeBotDraggable(bot) {
