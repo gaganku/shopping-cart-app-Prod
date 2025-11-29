@@ -19,14 +19,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // If not moving and not dragging, snap to new home
             if (!isMoving) {
-                bot.style.left = `${homePosition.x}px`;
                 bot.style.top = `${homePosition.y}px`;
             }
         }
     });
 });
 
+let homePosition = null;
+let idleReturnTimeout;
 
+function startIdleReturnTimer() {
+    clearTimeout(idleReturnTimeout);
+    idleReturnTimeout = setTimeout(() => {
+        if (window.botReturnHome) {
+            window.botReturnHome();
+        }
+    }, 5000);
+}
 
 function createBot() {
     const botContainer = document.createElement('div');
@@ -173,6 +182,9 @@ function makeBotDraggable(bot) {
             e.preventDefault();
             document.body.style.userSelect = 'none';
             document.body.style.webkitUserSelect = 'none';
+            
+            // Clear idle timer when dragging starts
+            clearTimeout(idleReturnTimeout);
         }
     }
 
@@ -223,6 +235,9 @@ function makeBotDraggable(bot) {
                 left: currentX,
                 top: currentY
             }));
+            
+            // Start idle timer when dragging ends
+            startIdleReturnTimer();
         }
     }
 
@@ -376,7 +391,7 @@ function checkLoginStatus() {
 // === NEW AUTONOMOUS MOVEMENT FEATURES ===
 
 let isMoving = false;
-let homePosition = null;
+
 
 function startAutonomousBehavior() {
     const bot = document.querySelector('.cyber-bot');
