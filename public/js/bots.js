@@ -3,10 +3,30 @@
 document.addEventListener('DOMContentLoaded', () => {
     createBot();
     // Check for login status after a short delay to ensure bot is ready
+    // Check for login status after a short delay to ensure bot is ready
     setTimeout(checkLoginStatus, 500);
-    // Start autonomous behavior - DISABLED
-    // setTimeout(startAutonomousBehavior, 3000);
+    
+    // Update home position on resize
+    window.addEventListener('resize', () => {
+        const bot = document.querySelector('.cyber-bot');
+        if (bot) {
+            const right = 20;
+            const bottom = 20;
+            homePosition = {
+                x: window.innerWidth - right - bot.offsetWidth,
+                y: window.innerHeight - bottom - bot.offsetHeight
+            };
+            
+            // If not moving and not dragging, snap to new home
+            if (!isMoving) {
+                bot.style.left = `${homePosition.x}px`;
+                bot.style.top = `${homePosition.y}px`;
+            }
+        }
+    });
 });
+
+
 
 function createBot() {
     const botContainer = document.createElement('div');
@@ -64,8 +84,8 @@ function makeBotDraggable(bot) {
     } else {
         // Get initial position from CSS
         const computedStyle = window.getComputedStyle(bot);
-        const right = parseInt(computedStyle.right);
-        const bottom = parseInt(computedStyle.bottom);
+        const right = parseInt(computedStyle.right) || 20; // Default to 20 if NaN
+        const bottom = parseInt(computedStyle.bottom) || 20; // Default to 20 if NaN
         
         // Convert to left/top positioning
         bot.style.right = 'auto';
@@ -74,6 +94,9 @@ function makeBotDraggable(bot) {
         const initialTop = window.innerHeight - bottom - bot.offsetHeight;
         bot.style.left = `${initialLeft}px`;
         bot.style.top = `${initialTop}px`;
+        
+        // Set home position
+        homePosition = { x: initialLeft, y: initialTop };
         
         // Set initial offset to current position
         xOffset = initialLeft;
