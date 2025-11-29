@@ -168,11 +168,6 @@ app.get('/auth/google/callback',
 
             // Check if existing user and if they need OTP (10-day check)
             if (user) {
-                // Check verification status
-                if (!user.isVerified) {
-                    return res.redirect('/login.html?error=pending_verification');
-                }
-
                 const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
                 
                 // If user logged in within 10 days, skip OTP
@@ -353,7 +348,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
                             <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
                                 <h1 style="color: #667eea; margin: 0 0 20px 0; font-size: 28px;">Welcome, ${username}! 🚀</h1>
                                 <p style="font-size: 16px; color: #333; line-height: 1.6;">Your account has been successfully created.</p>
-                                <p style="font-size: 16px; color: #333; line-height: 1.6;">Please verify your email or wait for admin approval to login.</p>
+                                <p style="font-size: 16px; color: #333; line-height: 1.6;">You can browse products, but verification is required to make purchases.</p>
                             </div>
                         </div>
                     `
@@ -367,9 +362,12 @@ app.post('/api/auth/google/complete', async (req, res) => {
             }
         }
 
-        // Do NOT login immediately. Require verification.
-        delete req.session.googleAuth;
-        res.json({ message: 'Account created. Please wait for verification.', redirect: '/login.html?error=pending_verification' });
+        // Login user (they can browse but not purchase until verified)
+        req.login(newUser, (err) => {
+            if (err) return res.status(500).json({ error: 'Login failed: ' + err.message });
+            delete req.session.googleAuth;
+            res.json({ message: 'Account created and logged in' });
+        });
 
     } catch (err) {
         console.error('Google Complete Error:', err);
@@ -556,11 +554,6 @@ app.post('/api/login', async (req, res) => {
         const user = await User.findOne({ username });
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Check verification status (skip for Google users who might not have password)
-        if (user.password && !user.isVerified) {
-            return res.status(401).json({ error: 'Please verify your email before logging in' });
         }
 
         // Check password (simple string comparison for now as per existing code)
