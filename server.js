@@ -168,6 +168,11 @@ app.get('/auth/google/callback',
 
             // Check if existing user and if they need OTP (10-day check)
             if (user) {
+                // Check verification status
+                if (!user.isVerified) {
+                    return res.redirect('/login.html?error=pending_verification');
+                }
+
                 const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
                 
                 // If user logged in within 10 days, skip OTP
@@ -330,7 +335,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
             googleId: profile.id,
             displayName: profile.displayName,
             phoneNumber: phone,
-            isVerified: !transporter, // Auto-verify if email service is not configured
+            isVerified: false, // Require admin approval or email verification
             lastLogin: new Date()
         });
 
@@ -348,7 +353,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
                             <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
                                 <h1 style="color: #667eea; margin: 0 0 20px 0; font-size: 28px;">Welcome, ${username}! 🚀</h1>
                                 <p style="font-size: 16px; color: #333; line-height: 1.6;">Your account has been successfully created.</p>
-                                <p style="font-size: 16px; color: #333; line-height: 1.6;">We're thrilled to have you on board!</p>
+                                <p style="font-size: 16px; color: #333; line-height: 1.6;">Please verify your email or wait for admin approval to login.</p>
                             </div>
                         </div>
                     `
@@ -362,12 +367,9 @@ app.post('/api/auth/google/complete', async (req, res) => {
             }
         }
 
-        // Login
-        req.login(newUser, (err) => {
-            if (err) return res.status(500).json({ error: 'Login failed: ' + err.message });
-            delete req.session.googleAuth;
-            res.json({ message: 'Account created and logged in' });
-        });
+        // Do NOT login immediately. Require verification.
+        delete req.session.googleAuth;
+        res.json({ message: 'Account created. Please wait for verification.', redirect: '/login.html?error=pending_verification' });
 
     } catch (err) {
         console.error('Google Complete Error:', err);
@@ -457,23 +459,6 @@ app.post('/api/signup', async (req, res) => {
         // Check if user exists
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         if (existingUser) {
-            return res.status(400).json({ error: 'Username or email already exists' });
-        }
-
-        const verificationToken = crypto.randomUUID();
-
-        const user = new User({ 
-            username, 
-            email, 
-            password,
-            verificationToken,
-            isVerified: !transporter, // Auto-verify if no email configured
-            lastLogin: new Date()
-        });
-        await user.save();
-
-        // Send verification email only if transporter is available
-        if (transporter) {
             try {
                 const verificationLink = `https://shopping-cart-app-prod-3.onrender.com/api/verify?token=${verificationToken}`;
                 

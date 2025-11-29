@@ -394,6 +394,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urlParams.get('error') === 'not_registered') {
         showErrorModal();
         window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('error') === 'pending_verification') {
+        document.querySelector('#error-modal .modal-title').textContent = 'Verification Pending';
+        document.querySelector('#error-modal .modal-text').textContent = 'Your account is waiting for email verification or admin approval.';
+        const createBtn = document.querySelector('#error-modal .modal-btn-primary');
+        if (createBtn) createBtn.style.display = 'none';
+        showErrorModal();
+        window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('google2fa') === 'true') {
         show2FAModal();
         window.history.replaceState({}, document.title, window.location.pathname);
