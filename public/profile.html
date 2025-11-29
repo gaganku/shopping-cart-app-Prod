@@ -255,6 +255,81 @@
             background: var(--primary);
             color: white;
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .profile-container {
+                padding: 6rem 1rem 2rem !important;
+            }
+
+            .profile-header {
+                flex-direction: column !important;
+                text-align: center;
+            }
+
+            .profile-photo {
+                width: 120px !important;
+                height: 120px !important;
+            }
+
+            .profile-info h1 {
+                font-size: 1.8rem !important;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+
+            .order-card {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+
+            .order-product-image {
+                width: 100% !important;
+                max-width: 200px !important;
+                height: auto !important;
+                margin: 0 auto;
+            }
+
+            .order-product-info {
+                text-align: center;
+            }
+
+            .order-product-name {
+                font-size: 1.1rem !important;
+            }
+
+            .order-product-price {
+                font-size: 1.3rem !important;
+            }
+
+            .header-controls {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .header-controls a,
+            .header-controls button {
+                font-size: 0.85rem;
+                padding: 0.6rem 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .profile-info h1 {
+                font-size: 1.5rem !important;
+            }
+
+            .stat-card h3 {
+                font-size: 1.5rem !important;
+            }
+
+            .order-card {
+                padding: 1.5rem !important;
+            }
+        }
     </style>
 </head>
 <body>

@@ -7,6 +7,123 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/animated-bot.css">
     <link rel="stylesheet" href="css/bot-animations.css">
+    <style>
+        /* Mobile Responsive Styles for Cart */
+        @media (max-width: 768px) {
+            main {
+                padding: 6rem 1rem 2rem !important;
+            }
+
+            .cart-container {
+                max-width: 100% !important;
+            }
+
+            h1 {
+                font-size: 2rem !important;
+                text-align: center;
+            }
+
+            /* Cart Item Mobile Layout */
+            .cart-item > div {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+
+            .cart-item img {
+                width: 100% !important;
+                max-width: 200px !important;
+                height: auto !important;
+                margin: 0 auto;
+            }
+
+            .cart-item h3 {
+                font-size: 1.2rem !important;
+                text-align: center;
+            }
+
+            .cart-item p {
+                text-align: center;
+            }
+
+            /* Button Container */
+            .cart-item > div > div:last-child {
+                width: 100%;
+                justify-content: center !important;
+            }
+
+            .cart-item button {
+                flex: 1;
+                min-width: 120px;
+            }
+
+            /* Total Section Mobile */
+            .cart-container > div[style*="border: 2px solid"] {
+                padding: 1.5rem !important;
+            }
+
+            .cart-container > div[style*="border: 2px solid"] > div {
+                flex-direction: column !important;
+                gap: 1rem !important;
+                text-align: center;
+            }
+
+            .cart-container > div[style*="border: 2px solid"] span {
+                font-size: 1.3rem !important;
+            }
+
+            .cart-container > div[style*="border: 2px solid"] span:last-child {
+                font-size: 1.8rem !important;
+            }
+
+            /* Modal Mobile */
+            .modal-card {
+                margin: 1rem;
+                max-width: calc(100% - 2rem) !important;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .modal-btn {
+                width: 100%;
+            }
+
+            /* Header Mobile */
+            .header-controls {
+                gap: 0.5rem;
+            }
+
+            .header-controls span {
+                display: none;
+            }
+
+            .logout-btn {
+                font-size: 0.9rem;
+                padding: 0.6rem 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem !important;
+            }
+
+            .cart-item {
+                padding: 1.5rem !important;
+            }
+
+            .cart-item h3 {
+                font-size: 1.1rem !important;
+            }
+
+            .cart-item button {
+                font-size: 0.9rem;
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <script src="js/background.js"></script>
