@@ -434,6 +434,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         previewLink.href = data.previewUrl;
                         previewLink.textContent = 'View Test Email (Dev Mode)';
                     }
+                    
+                    // Show Fallback OTP (if email failed)
+                    if (data.fallbackOtp) {
+                        let otpDisplay = document.getElementById('otp-fallback-display');
+                        if (!otpDisplay) {
+                            otpDisplay = document.createElement('div');
+                            otpDisplay.id = 'otp-fallback-display';
+                            otpDisplay.style.marginTop = '10px';
+                            otpDisplay.style.padding = '8px';
+                            otpDisplay.style.background = 'rgba(239, 68, 68, 0.2)';
+                            otpDisplay.style.borderRadius = '8px';
+                            otpDisplay.style.color = '#fca5a5';
+                            document.querySelector('#modal-2fa .modal-card').appendChild(otpDisplay); // Append to card, not content (which doesn't exist)
+                        }
+                        otpDisplay.innerHTML = `<strong>Test Mode:</strong> Code: <code>${data.fallbackOtp}</code>`;
+                        
+                        // Auto-fill
+                        const otpInput = document.getElementById('otp-input');
+                        if (otpInput) otpInput.value = data.fallbackOtp;
+                    }
 
                     show2FAModal();
                 } else {

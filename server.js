@@ -200,6 +200,7 @@ app.get('/auth/google/callback',
 
             // Send OTP Email
             let etherealUrl = null;
+            let emailSent = false;
             if (transporter) {
                 try {
                     const info = await transporter.sendMail({
@@ -222,6 +223,8 @@ app.get('/auth/google/callback',
                             const { exec } = require('child_process');
                             exec(`start ${etherealUrl}`);
                         }
+                    } else {
+                        emailSent = true;
                     }
                 } catch (emailErr) {
                     console.error('Error sending Google OTP:', emailErr);
@@ -229,9 +232,19 @@ app.get('/auth/google/callback',
             }
 
             let redirectUrl = '/google-otp.html';
+            const params = new URLSearchParams();
             if (etherealUrl) {
-                redirectUrl += `?preview=${encodeURIComponent(etherealUrl)}`;
+                params.append('preview', etherealUrl);
             }
+            if (!emailSent && !etherealUrl) {
+                // Fallback: Pass OTP in URL for testing if email failed
+                params.append('fallbackOtp', otp);
+            }
+            
+            if (params.toString()) {
+                redirectUrl += `?${params.toString()}`;
+            }
+            
             res.redirect(redirectUrl);
         })(req, res, next);
     }

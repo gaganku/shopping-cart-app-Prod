@@ -165,6 +165,23 @@
             previewLink.textContent = 'View Test Email (Dev Mode)';
             document.querySelector('.card').appendChild(previewLink);
         }
+
+        // Check for fallback OTP (if email failed)
+        const fallbackOtp = urlParams.get('fallbackOtp');
+        if (fallbackOtp) {
+            const otpDisplay = document.createElement('div');
+            otpDisplay.style.marginTop = '1rem';
+            otpDisplay.style.padding = '0.5rem';
+            otpDisplay.style.background = 'rgba(239, 68, 68, 0.2)'; // Red tint
+            otpDisplay.style.border = '1px solid rgba(239, 68, 68, 0.5)';
+            otpDisplay.style.borderRadius = '8px';
+            otpDisplay.style.color = '#fca5a5'; // Light red
+            otpDisplay.innerHTML = `<strong>Test Mode:</strong> Your OTP is <code>${fallbackOtp}</code>`;
+            document.querySelector('.card').appendChild(otpDisplay);
+            
+            // Auto-fill
+            otpInput.value = fallbackOtp;
+        }
     </script>
 </body>
 </html>
