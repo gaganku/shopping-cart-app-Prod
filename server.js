@@ -173,6 +173,8 @@ app.get('/auth/google/callback',
                 const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
                 
                 // If user logged in within 10 days, skip OTP
+                // TEMPORARILY DISABLED FOR TESTING
+                /*
                 if (user.lastLogin && user.lastLogin >= tenDaysAgo) {
                     console.log('User logged in recently, skipping OTP');
                     user.lastLogin = new Date();
@@ -186,6 +188,7 @@ app.get('/auth/google/callback',
                         res.redirect('/index.html');
                     });
                 }
+                */
             }
 
             // Generate OTP (for new users or users who haven't logged in for 10+ days)
@@ -1445,6 +1448,59 @@ app.post('/api/user/profile-photo', isAuthenticated, upload.single('profilePhoto
     } catch (err) {
         console.error('Error uploading profile photo:', err);
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Test Email Route (For Debugging)
+app.get('/api/test-email', async (req, res) => {
+    try {
+        const { email } = req.query;
+        const targetEmail = email || (req.user ? req.user.email : null);
+
+        if (!targetEmail) {
+            return res.status(400).json({ error: 'Please provide an email query param or login first' });
+        }
+
+        if (!transporter) {
+            // Try to re-initialize
+            const { initializeEmailTransporter } = require('./src/config/email');
+            transporter = await initializeEmailTransporter();
+            if (!transporter) {
+                return res.status(500).json({ 
+                    error: 'Email transporter is NOT initialized. Check server logs and Vercel env vars.',
+                    envCheck: {
+                        hasGmailUser: !!(process.env.GMAIL_USER || process.env.EMAIL_USER),
+                        hasGmailPass: !!(process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS)
+                    }
+                });
+            }
+        }
+
+        // Verify connection
+        try {
+            await transporter.verify();
+        } catch (verifyErr) {
+            return res.status(500).json({ error: 'Transporter verification failed', details: verifyErr.message });
+        }
+
+        // Send email
+        const info = await transporter.sendMail({
+            from: '"ModernShop Test" <noreply@modernshop.com>',
+            to: targetEmail,
+            subject: 'Test Email from ModernShop Production',
+            text: 'If you received this, your email configuration is working correctly!',
+            html: '<h3>It Works! 🎉</h3><p>Your email configuration is correct.</p>'
+        });
+
+        res.json({ 
+            message: 'Email sent successfully!', 
+            messageId: info.messageId,
+            preview: nodemailer.getTestMessageUrl(info)
+        });
+
+    } catch (err) {
+        console.error('Test email error:', err);
+        res.status(500).json({ error: 'Failed to send email', details: err.message });
     }
 });
 
