@@ -279,10 +279,8 @@ app.post('/api/auth/google/verify-otp', async (req, res) => {
             const user = await User.findById(sessionData.userId);
             if (!user) return res.status(404).json({ error: 'User not found' });
 
-            // If this was a new signup (not existing user flow), mark as verified
-            if (!sessionData.isExistingUser) {
-                user.isVerified = true;
-            }
+            // Always mark as verified if they pass OTP (for both new and existing users)
+            user.isVerified = true;
 
             user.lastLogin = new Date();
             await user.save();
