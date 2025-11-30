@@ -194,9 +194,17 @@ app.get('/auth/google/callback',
             // Generate OTP (for new users or users who haven't logged in for 10+ days)
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
             
+            // Store minimal profile data to avoid serialization issues
+            const cleanProfile = profile ? {
+                id: profile.id,
+                displayName: profile.displayName,
+                emails: profile.emails,
+                photos: profile.photos
+            } : null;
+
             // Store in session
             req.session.googleAuth = {
-                profile: profile,
+                profile: cleanProfile,
                 otp: otp,
                 otpExpires: Date.now() + 10 * 60 * 1000, // 10 mins
                 isExistingUser: !!user,
@@ -235,7 +243,14 @@ app.get('/auth/google/callback',
                 redirectUrl += `?${params.toString()}`;
             }
             
-            res.redirect(redirectUrl);
+            // Explicitly save session before redirect
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    return res.redirect('/login.html?error=session_error');
+                }
+                res.redirect(redirectUrl);
+            });
         })(req, res, next);
     }
 );
@@ -270,13 +285,22 @@ app.post('/api/auth/google/verify-otp', async (req, res) => {
             req.login(user, (err) => {
                 if (err) return res.status(500).json({ error: 'Login failed' });
                 delete req.session.googleAuth; // Clear session data
-                res.json({ message: 'Login successful' });
+                req.session.save((saveErr) => {
+                    if (saveErr) console.error('Session save error:', saveErr);
+                    res.json({ message: 'Login successful' });
+                });
             });
         } else {
             // New user - allow to proceed to completion
             // Don't clear session yet, we need profile data for completion
             sessionData.otpVerified = true;
-            res.json({ message: 'OTP verified', redirect: '/google-complete.html' });
+            req.session.save((saveErr) => {
+                if (saveErr) {
+                    console.error('Session save error:', saveErr);
+                    return res.status(500).json({ error: 'Session save failed' });
+                }
+                res.json({ message: 'OTP verified', redirect: '/google-complete.html' });
+            });
         }
     } catch (err) {
         console.error('Google OTP Verify Error:', err);
@@ -325,8 +349,10 @@ app.post('/api/auth/google/complete', async (req, res) => {
             return res.status(400).json({ error: 'Username already taken' });
         }
 
+        console.log('[Google Complete] Session Data Keys:', Object.keys(sessionData));
         const profile = sessionData.profile;
         if (!profile) {
+            console.error('[Google Complete] Profile missing. Session data:', JSON.stringify(sessionData, null, 2));
             return res.status(400).json({ error: 'Profile data missing from session' });
         }
 
@@ -1272,47 +1298,9 @@ app.get('/api/orders', async (req, res) => {
     }
 });
 
-app.post('/api/auth/google/complete', async (req, res) => {
-    try {
-        if (!req.session.googleProfile) {
-            return res.status(400).json({ error: 'No Google profile found in session' });
-        }
 
-        const { username } = req.body;
-        const profile = req.session.googleProfile;
 
-        // Check if username exists
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(400).json({ error: 'Username already taken' });
-        }
 
-        // Create new user
-        const user = new User({
-            googleId: profile.id,
-            username: username,
-            email: profile.emails && profile.emails[0] ? profile.emails[0].value : null,
-            displayName: username // Use custom username as display name
-        });
-
-        await user.save();
-        console.log('New Google user created with custom username:', user.username);
-
-        // Log user in
-        req.logIn(user, (err) => {
-            if (err) {
-                return res.status(500).json({ error: 'Login failed after signup' });
-            }
-            // Clear session profile
-            delete req.session.googleProfile;
-            res.json({ message: 'Signup successful', username: user.username });
-        });
-
-    } catch (err) {
-        console.error('Error in complete profile:', err);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
 
 // (Multer and isAdmin middleware moved to top of file after model imports)
 
