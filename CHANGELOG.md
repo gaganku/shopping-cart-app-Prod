@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [save4] - 2025-11-30
+
+### Added
+- **Sakura Live Background**: Implemented the animated sakura background on all authentication pages (`login.html`, `signup.html`, `forgot-password.html`, `reset-password.html`, `google-otp.html`, `google-complete.html`) for a consistent and premium visual experience.
+- **Enhanced Signup Flow**: Rewrote the signup process to create users immediately and use OTP verification instead of email links. Form signups now auto-login upon successful verification.
+- **Session Persistence**: Added explicit session saving in OAuth and OTP flows to prevent data loss during redirects.
+
+### Fixed
+- **Profile Data Missing**: Resolved the "Profile data missing from session" error in Google OAuth by implementing a fallback mechanism to recover user data from the database if the session profile is lost.
+- **Username Display**: Updated the UI to prioritize displaying the chosen `username` instead of the generic `displayName` (email prefix) in the header and profile page.
+- **Verification Status**: Ensured that `isVerified` is correctly set to `true` for all users (both new and existing) upon successful OTP verification.
+- **Duplicate Endpoints**: Removed duplicate API endpoints in `server.js` that were causing conflicts.
+
 ## [save3] - 2025-11-29
 
 ### Added
