@@ -133,7 +133,9 @@ async function seedProducts() {
         console.log('Products seeded');
     }
 }
-seedProducts();
+mongoose.connection.once('open', () => {
+    seedProducts();
+});
 
 // Google OAuth Routes
 console.log('Registering Google OAuth routes...');
