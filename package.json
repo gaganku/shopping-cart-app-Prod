@@ -4,7 +4,12 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "concurrently \"node services/gateway/server.js\" \"node services/auth/server.js\" \"node services/products/server.js\" \"node services/orders/server.js\"",
+    "start:gateway": "node services/gateway/server.js",
+    "start:auth": "node services/auth/server.js",
+    "start:products": "node services/products/server.js",
+    "start:orders": "node services/orders/server.js",
+    "start:monolith": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -12,11 +17,13 @@
   "description": "",
   "dependencies": {
     "body-parser": "^2.2.0",
+    "concurrently": "^9.2.1",
     "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
+    "http-proxy-middleware": "^3.0.5",
     "mongoose": "^8.20.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
