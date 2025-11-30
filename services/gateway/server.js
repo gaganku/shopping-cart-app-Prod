@@ -12,15 +12,11 @@ app.use(cors({
     credentials: true
 }));
 
-// Serve Static Files (Frontend)
-// Note: We go up two levels to find 'public'
-app.use(express.static(path.join(__dirname, '../../public')));
-
-// Proxy Configuration
+// Proxy Configuration with pathRewrite
 const authServiceProxy = createProxyMiddleware({
     target: 'http://localhost:3001',
     changeOrigin: true,
-    ws: true, // Proxy websockets if needed
+    ws: true,
 });
 
 const productServiceProxy = createProxyMiddleware({
@@ -33,7 +29,7 @@ const orderServiceProxy = createProxyMiddleware({
     changeOrigin: true,
 });
 
-// Routes Routing
+// API Routes (MUST come BEFORE static file serving)
 
 // Order Service (Specific routes first)
 app.use('/api/user/orders', orderServiceProxy);
@@ -54,8 +50,9 @@ app.use('/api/orders', orderServiceProxy);
 app.use('/api/purchase', orderServiceProxy);
 app.use('/api/report', orderServiceProxy);
 
-// Fallback for SPA (if using client-side routing, but we are using multi-page HTML)
-// For now, just let express.static handle it.
+// Serve Static Files (Frontend) - AFTER API routes
+// Note: We go up two levels to find 'public'
+app.use(express.static(path.join(__dirname, '../../public')));
 
 app.listen(PORT, () => {
     console.log(`Gateway running on port ${PORT}`);

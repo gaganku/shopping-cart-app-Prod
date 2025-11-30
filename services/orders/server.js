@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const passport = require('passport');
 const MongoStore = require('connect-mongo');
 const xlsx = require('xlsx');
 
@@ -15,7 +14,6 @@ const User = require('../../src/models/User');
 
 // Config
 const connectDB = require('../../src/config/database');
-const configurePassport = require('../../src/config/passport');
 
 // Email Service
 const { sendOrderConfirmationEmail } = require('../../src/utils/emailService');
@@ -34,7 +32,7 @@ app.use(bodyParser.json());
 // Database
 connectDB();
 
-// Session (Must match Auth Service)
+// Session (Must match Auth Service for shared sessions)
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
@@ -51,22 +49,23 @@ app.use(session({
     }
 }));
 
-// Passport
-app.use(passport.initialize());
-app.use(passport.session());
-configurePassport();
+// Note: We don't need Passport here, just session checking
 
 // Middleware to check auth
 const isAuthenticated = (req, res, next) => {
-    if (req.isAuthenticated()) {
+    // Check if user session exists (set by Auth Service)
+    if (req.session && req.session.passport && req.session.passport.user) {
         return next();
     }
     res.status(401).json({ error: 'Not authenticated' });
 };
 
-const isAdmin = (req, res, next) => {
-    if (req.isAuthenticated() && req.user.isAdmin) {
-        return next();
+const isAdmin = async (req, res, next) => {
+    if (req.session && req.session.passport && req.session.passport.user) {
+        const user = await User.findById(req.session.passport.user);
+        if (user && user.isAdmin) {
+            return next();
+        }
     }
     res.status(403).json({ error: 'Admin access required' });
 };
@@ -77,7 +76,10 @@ const isAdmin = (req, res, next) => {
 app.post('/api/purchase', isAuthenticated, async (req, res) => {
     try {
         const { productId } = req.body;
-        const user = req.user;
+        
+        // Get user from session
+        const user = await User.findById(req.session.passport.user);
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
         if (!user.isVerified) {
             return res.status(403).json({ error: 'Please verify your email/phone before purchasing.' });
@@ -130,7 +132,10 @@ app.post('/api/purchase', isAuthenticated, async (req, res) => {
 // User Orders
 app.get('/api/user/orders', isAuthenticated, async (req, res) => {
     try {
-        const orders = await Order.find({ userId: req.user._id })
+        const user = await User.findById(req.session.passport.user);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        const orders = await Order.find({ userId: user._id })
             .populate('productId')
             .sort({ date: -1 });
         res.json(orders);
