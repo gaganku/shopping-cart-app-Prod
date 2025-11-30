@@ -4,8 +4,10 @@ const nodemailer = require('nodemailer');
 const sendOTPEmail = async (email, otp, purpose = 'login') => {
     const transporter = getTransporter();
     
+    console.log(`[EmailService] Attempting to send OTP to: ${email}`);
+    
     if (!transporter) {
-        console.error('Email transporter not initialized');
+        console.error('[EmailService] Email transporter not initialized');
         return;
     }
 
@@ -30,9 +32,11 @@ const sendOTPEmail = async (email, otp, purpose = 'login') => {
             `
         });
 
+        console.log('[EmailService] Email sent successfully. MessageID:', info.messageId);
+
         const etherealUrl = nodemailer.getTestMessageUrl(info);
         if (etherealUrl) {
-            console.log('OTP email sent: %s', etherealUrl);
+            console.log('[EmailService] Ethereal URL:', etherealUrl);
             // Only auto-open in local development on Windows
             if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
                 const { exec } = require('child_process');
@@ -41,7 +45,7 @@ const sendOTPEmail = async (email, otp, purpose = 'login') => {
         }
         return etherealUrl;
     } catch (error) {
-        console.error('Error sending OTP email:', error);
+        console.error('[EmailService] Error sending OTP email:', error);
         return null;
     }
 };

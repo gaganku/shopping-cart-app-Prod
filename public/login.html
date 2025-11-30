@@ -341,7 +341,7 @@
         <div class="modal-card">
             <h2 class="modal-title">Two-Step Verification</h2>
             <p class="modal-text">We've sent a verification code to your email. Please enter it below to continue.</p>
-            <input type="text" id="otp-input" class="login-input" placeholder="Enter 6-digit code" style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;">
+            <input type="text" id="otp-input" class="login-input" placeholder="Enter 6-digit code" style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;" autocomplete="off">
             <button class="modal-btn modal-btn-primary">Verify Code</button>
             <button class="modal-btn modal-btn-secondary">Cancel</button>
         </div>
@@ -370,6 +370,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const otpInput = document.getElementById('otp-input');
     let pendingUserId = null;
 
+    // Debug: Watch for any changes to OTP input
+    if (otpInput) {
+        otpInput.addEventListener('input', (e) => {
+            console.log('[DEBUG] OTP input changed to:', e.target.value);
+        });
+        
+        // Watch for programmatic value changes
+        const originalValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+        Object.defineProperty(otpInput, 'value', {
+            set: function(newValue) {
+                console.log('[DEBUG] OTP value being set to:', newValue);
+                console.trace('[DEBUG] Stack trace:');
+                originalValueSetter.call(this, newValue);
+            },
+            get: function() {
+                return this.getAttribute('value') || '';
+            }
+        });
+    }
+
     // Modal functions
     const errorModal = document.getElementById('error-modal');
     function showErrorModal() { 
@@ -383,7 +403,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('modal-2fa');
         if (!modal) { console.error('2FA modal not found'); return; }
         modal.style.display = 'flex';
-        if (otpInput) otpInput.focus();
+        
+        // Debug: Log the OTP input value
+        console.log('[DEBUG] Modal opened. OTP input value:', otpInput ? otpInput.value : 'input not found');
+        
+        // Force clear the input
+        if (otpInput) {
+            otpInput.value = '';
+            console.log('[DEBUG] Cleared OTP input');
+            otpInput.focus();
+        }
     }
     function close2FAModal() {
         const modal = document.getElementById('modal-2fa');
