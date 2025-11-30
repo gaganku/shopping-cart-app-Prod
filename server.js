@@ -350,13 +350,42 @@ app.post('/api/auth/google/complete', async (req, res) => {
         }
 
         console.log('[Google Complete] Session Data Keys:', Object.keys(sessionData));
-        const profile = sessionData.profile;
-        if (!profile) {
-            console.error('[Google Complete] Profile missing. Session data:', JSON.stringify(sessionData, null, 2));
-            return res.status(400).json({ error: 'Profile data missing from session' });
+        
+        // If profile is missing, try to recover from userId if available (for signup flow)
+        let email = null;
+        let googleId = null;
+        let displayName = null;
+
+        if (sessionData.profile) {
+            const profile = sessionData.profile;
+            email = (profile.emails && profile.emails.length > 0) ? profile.emails[0].value : null;
+            googleId = profile.id;
+            displayName = profile.displayName;
+        } else if (sessionData.userId) {
+            // Fallback: Fetch user if we have an ID (e.g. from signup flow)
+            const existingUser = await User.findById(sessionData.userId);
+            if (existingUser) {
+                email = existingUser.email;
+                googleId = existingUser.googleId;
+                displayName = existingUser.displayName;
+                
+                // Update the existing user instead of creating new
+                existingUser.username = username;
+                existingUser.phoneNumber = phone;
+                existingUser.isVerified = true;
+                existingUser.lastLogin = new Date();
+                await existingUser.save();
+                
+                return req.login(existingUser, (err) => {
+                    if (err) return res.status(500).json({ error: 'Login failed' });
+                    delete req.session.googleAuth;
+                    req.session.save(() => {
+                        res.json({ message: 'Profile completed', username: existingUser.username });
+                    });
+                });
+            }
         }
 
-        const email = (profile.emails && profile.emails.length > 0) ? profile.emails[0].value : null;
         if (!email) {
             return res.status(400).json({ error: 'No email found in Google profile' });
         }
@@ -364,8 +393,8 @@ app.post('/api/auth/google/complete', async (req, res) => {
         const newUser = new User({
             username,
             email,
-            googleId: profile.id,
-            displayName: profile.displayName,
+            googleId: googleId,
+            displayName: displayName,
             phoneNumber: phone,
             isVerified: false, // Require admin approval or email verification
             lastLogin: new Date()
