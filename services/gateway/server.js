@@ -8,51 +8,90 @@ const PORT = process.env.PORT || 3000;
 
 // CORS
 app.use(cors({
-    origin: true, // Allow all origins for now
+    origin: true,
     credentials: true
 }));
 
-// Proxy Configuration with pathRewrite
-const authServiceProxy = createProxyMiddleware({
-    target: 'http://localhost:3001',
-    changeOrigin: true,
-    ws: true,
+// Debug logging
+app.use((req, res, next) => {
+    console.log(`[Gateway] ${req.method} ${req.url}`);
+    next();
 });
 
-const productServiceProxy = createProxyMiddleware({
-    target: 'http://localhost:3002',
-    changeOrigin: true,
-});
-
-const orderServiceProxy = createProxyMiddleware({
-    target: 'http://localhost:3003',
-    changeOrigin: true,
-});
-
-// API Routes (MUST come BEFORE static file serving)
+// API Proxy Routes
 
 // Order Service (Specific routes first)
-app.use('/api/user/orders', orderServiceProxy);
+app.use('/api/user/orders', createProxyMiddleware({ 
+    target: 'http://localhost:3003',
+    changeOrigin: true
+}));
 
-// Auth Service
-app.use('/api/auth', authServiceProxy);
-app.use('/api/login', authServiceProxy);
-app.use('/api/signup', authServiceProxy);
-app.use('/api/logout', authServiceProxy);
-app.use('/api/user', authServiceProxy); // Profile, etc.
-app.use('/auth', authServiceProxy); // Google OAuth
+// Auth Service routes
+app.use('/api/auth', createProxyMiddleware({ 
+    target: 'http://localhost:3001',
+    changeOrigin: true
+}));
+
+app.use('/api/login', createProxyMiddleware({ 
+    target: 'http://localhost:3001',
+    changeOrigin: true
+}));
+
+app.use('/api/signup', createProxyMiddleware({ 
+    target: 'http://localhost:3001',
+    changeOrigin: true
+}));
+
+app.use('/api/logout', createProxyMiddleware({ 
+    target: 'http://localhost:3001',
+    changeOrigin: true
+}));
+
+app.use('/api/user', createProxyMiddleware({ 
+    target: 'http://localhost:3001',
+    changeOrigin: true
+}));
+
+app.use('/auth', createProxyMiddleware({ 
+    target: 'http://localhost:3001',
+    changeOrigin: true,
+    ws: true
+}));
 
 // Product Service
-app.use('/api/products', productServiceProxy);
+app.use('/api/products', createProxyMiddleware({ 
+    target: 'http://localhost:3002',
+    changeOrigin: true
+}));
 
-// Order Service
-app.use('/api/orders', orderServiceProxy);
-app.use('/api/purchase', orderServiceProxy);
-app.use('/api/report', orderServiceProxy);
+// Order Service routes
+app.use('/api/orders', createProxyMiddleware({ 
+    target: 'http://localhost:3003',
+    changeOrigin: true
+}));
 
-// Serve Static Files (Frontend) - AFTER API routes
-// Note: We go up two levels to find 'public'
-app.use(express.static(path.join(__dirname, '../../public')));
+app.use('/api/purchase', createProxyMiddleware({ 
+    target: 'http://localhost:3003',
+    changeOrigin: true
+}));
+
+app.use('/api/report', createProxyMiddleware({ 
+    target: 'http://localhost:3003',
+    changeOrigin: true
+}));
+
+// Serve Static Files (Frontend)
+// Create static middleware once
+const staticMiddleware = express.static(path.join(__dirname, '../../public'));
+
+// Only serve static files for non-API routes
+app.use((req, res, next) => {
+    // Skip static file serving for API routes
+    if (req.path.startsWith('/api') || req.path.startsWith('/auth')) {
+        return next();
+    }
+    staticMiddleware(req, res, next);
+});
 
 app.listen(PORT, () => {
     console.log(`Gateway running on port ${PORT}`);
@@ -60,3 +99,4 @@ app.listen(PORT, () => {
     console.log(`Proxying Products -> http://localhost:3002`);
     console.log(`Proxying Orders -> http://localhost:3003`);
 });
+
