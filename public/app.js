@@ -33,7 +33,7 @@ class ShoppingCartApp {
                 
                 this.currentUser = data.user.username;
                 if (this.userDisplay) {
-                    const displayName = data.user.displayName || data.user.username;
+                    const displayName = data.user.username || data.user.displayName;
                     this.userDisplay.textContent = `Hi, ${displayName}`;
                 }
 

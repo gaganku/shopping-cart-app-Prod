@@ -423,7 +423,7 @@
         }
 
         async function loadUserProfile() {
-            document.getElementById('display-name').textContent = currentUser.displayName || currentUser.username;
+            document.getElementById('display-name').textContent = currentUser.username || currentUser.displayName;
             document.getElementById('user-email').textContent = currentUser.email || 'No email provided';
 
             // Update profile photo if available

@@ -463,44 +463,63 @@ app.delete('/api/user', async (req, res) => {
 // Auth Endpoints
 app.post('/api/signup', async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, email, password, phoneNumber } = req.body;
         
         // Check if user exists
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         if (existingUser) {
-            try {
-                const verificationLink = `https://shopping-cart-app-prod-3.onrender.com/api/verify?token=${verificationToken}`;
-                
-                const info = await transporter.sendMail({
-                    from: '"ModernShop" <noreply@modernshop.com>',
-                    to: email,
-                    subject: 'Verify your account',
-                    html: `<p>Please click the link below to verify your account:</p><a href="${verificationLink}">${verificationLink}</a>`
-                });
-
-                const etherealUrl = nodemailer.getTestMessageUrl(info);
-                console.log('Verification email sent: %s', etherealUrl);
-                
-                // Auto-open the Ethereal email in browser
-                if (etherealUrl) {
-                    if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
-                        const { exec } = require('child_process');
-                        exec(`start ${etherealUrl}`);
-                    }
-                }
-            } catch (emailErr) {
-                console.error('Error sending verification email:', emailErr);
-                // Don't fail signup if email fails
-            }
-        } else {
-            console.log('Email not configured - user auto-verified');
+            return res.status(400).json({ error: 'Username or email already exists' });
         }
 
-        const message = transporter 
-            ? 'User created. Please verify your email.' 
-            : 'User created successfully. You can now login.';
+        // Create new user
+        const newUser = new User({
+            username,
+            email,
+            password, // Note: In production, hash this password!
+            phoneNumber,
+            isVerified: false, // User needs to verify OTP
+            createdAt: new Date()
+        });
+
+        // Generate OTP for initial verification
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        newUser.otpCode = otp;
+        newUser.otpExpires = otpExpires;
         
-        res.status(201).json({ message });
+        await newUser.save();
+        console.log(`User created: ${username} (${email})`);
+
+        // Send OTP Email
+        let emailResult = { success: false, fallbackOtp: otp };
+        if (email && transporter) {
+            try {
+                emailResult = await sendOTPEmail(email, otp, 'signup');
+                console.log('[Signup] Email send result:', emailResult);
+            } catch (emailErr) {
+                console.error('Error sending signup OTP:', emailErr);
+            }
+        }
+
+        // Store session data for OTP verification page
+        req.session.googleAuth = {
+            userId: newUser._id,
+            otp: otp,
+            otpExpires: otpExpires.getTime(),
+            isExistingUser: false,
+            emailSuccess: emailResult.success,
+            fallbackOtp: emailResult.success ? null : otp
+        };
+
+        // Return success with 2FA requirement
+        res.status(201).json({ 
+            message: 'User created. Please verify OTP.',
+            require2FA: true,
+            userId: newUser._id,
+            emailSuccess: emailResult.success
+        });
+
     } catch (err) {
         console.error('Signup error:', err);
         res.status(400).json({ error: err.message || 'Error creating user' });
