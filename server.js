@@ -1035,6 +1035,142 @@ app.post('/api/orders/:orderId/confirm', async (req, res) => {
     }
 });
 
+// Bulk Confirm Multiple Orders - Send One Combined Email
+app.post('/api/orders/confirm-bulk', async (req, res) => {
+    try {
+        const { orderIds } = req.body;
+        
+        if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+            return res.status(400).json({ error: 'No order IDs provided' });
+        }
+
+        const orders = await Order.find({ _id: { $in: orderIds } });
+        if (orders.length === 0) {
+            return res.status(404).json({ error: 'No orders found' });
+        }
+
+        const username = orders[0].username;
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Confirm all orders and collect product details
+        const orderDate = new Date();
+        const orderDetails = [];
+        let totalPrice = 0;
+
+        for (const order of orders) {
+            order.status = 'confirmed';
+            order.purchaseDate = orderDate;
+            await order.save();
+
+            const product = await Product.findOne({ id: order.productId });
+            if (product) {
+                orderDetails.push({
+                    productName: product.name,
+                    price: product.price,
+                    orderId: order._id
+                });
+                totalPrice += product.price;
+            }
+        }
+
+        console.log(`✅ ${orders.length} orders confirmed for user ${username}`);
+
+        // Send a single combined email
+        let emailSent = false;
+        let emailError = null;
+
+        if (user.email && transporter && orderDetails.length > 0) {
+            try {
+                const formattedDate = orderDate.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const orderItemsHTML = orderDetails.map((item, index) => `
+                    <tr style="${index > 0 ? 'border-top: 1px solid #eee;' : ''}">
+                        <td style="padding: 15px 5px; color: #333; font-weight: 600;">${item.productName}</td>
+                        <td style="padding: 15px  5px; color: #333; text-align: right;">${item.price.toFixed(2)}</td>
+                    </tr>
+                `).join('');
+
+                const confirmationEmail = await transporter.sendMail({
+                    from: '"ModernShop" <noreply@modernshop.com>',
+                    to: user.email,
+                    subject: `Order Confirmation - ${orderDetails.length} Item${orderDetails.length > 1 ? 's' : ''}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px;">
+                            <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+                                <h1 style="color: #667eea; margin: 0 0 20px 0; font-size: 28px;">🎉 Order Confirmed!</h1>
+                                <p style="font-size: 16px; color: #333; line-height: 1.6;">Hi ${user.displayName || user.username},</p>
+                                <p style="font-size: 16px; color: #333; line-height: 1.6;">Thank you for your purchase! Your ${orderDetails.length} order${orderDetails.length > 1 ? 's have' : ' has'} been confirmed.</p>
+                                <div style="background: #f7f7f7; border-left: 4px solid #667eea; padding: 20px; margin: 30px 0; border-radius: 8px;">
+                                    <h2 style="color: #667eea; margin: 0 0 15px 0; font-size: 20px;">Order Details</h2>
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr>
+                                                <th style="text-align: left; padding-bottom: 10px; color: #666; font-weight: 600; border-bottom: 2px solid #667eea;">Product</th>
+                                                <th style="text-align: right; padding-bottom: 10px; color: #666; font-weight: 600; border-bottom: 2px solid #667eea;">Price</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${orderItemsHTML}</tbody>
+                                        <tfoot>
+                                            <tr style="border-top: 2px solid #667eea;">
+                                                <td style="padding-top: 15px; font-weight: 700; color: #333; font-size: 18px;">Total</td>
+                                                <td style="padding-top: 15px; font-weight: 900; color: #667eea; font-size: 20px; text-align: right;">${totalPrice.toFixed(2)}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                    <p style="margin: 20px 0 0 0; color: #666; font-size: 14px;"><strong>Order Date:</strong> ${formattedDate}</p>
+                                </div>
+                                <div style="background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                    <p style="margin: 0; color: #2e7d32; font-weight: 600;">✓ Your order${orderDetails.length > 1 ? 's are' : ' is'} being processed</p>
+                                </div>
+                                <p style="font-size: 14px; color: #666; line-height: 1.6; margin-top: 30px;">You can view your order details anytime by visiting your <a href="https://shopping-cart-app-prod-3.onrender.com/cart.html" style="color: #667eea; text-decoration: none; font-weight: 600;">cart page</a>.</p>
+                                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+                                <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">This is an automated email. Please do not reply to this message.</p>
+                            </div>
+                        </div>
+                    `
+                });
+
+                const etherealUrl = nodemailer.getTestMessageUrl(confirmationEmail);
+                if (etherealUrl) {
+                    console.log(`Combined order email preview: ${etherealUrl}`);
+                    if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
+                        const { exec } = require('child_process');
+                        exec(`start ${etherealUrl}`);
+                    }
+                } else {
+                    console.log(`Combined order email sent to ${user.email}`);
+                }
+
+                emailSent = true;
+            } catch (emailErr) {
+                console.error('⚠️ Failed to send combined email (orders still confirmed):', emailErr);
+                emailError = emailErr.message;
+            }
+        }
+
+        res.json({ 
+            message: emailSent ? `${orders.length} orders confirmed and email sent` : `${orders.length} orders confirmed (email failed)`,
+            orderCount: orders.length,
+            totalPrice,
+            emailSent,
+            emailError
+        });
+    } catch (err) {
+        console.error('Error confirming bulk orders:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+
 // Get user's orders (cart) - only pending orders
 app.get('/api/orders/:username', async (req, res) => {
     try {

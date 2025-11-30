@@ -387,20 +387,31 @@
             confirmBtn.textContent = 'Confirming...';
 
             try {
-                // Confirm all orders sequentially
-                for (const order of window.cartOrders) {
-                    await fetch(`/api/orders/${order._id}/confirm`, {
-                        method: 'POST'
-                    });
-                }
+                // Use bulk endpoint to send ONE email
+                const orderIds = window.cartOrders.map(order => order._id);
+                const response = await fetch('/api/orders/confirm-bulk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ orderIds })
+                });
 
-                showToast(`All ${window.cartOrders.length} orders confirmed! ✅`);
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(`All ${window.cartOrders.length} orders confirmed! ✅ Check your email.`);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showToast(data.error || 'Failed to confirm orders');
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = `📧 Confirm All Orders (${window.cartOrders.length} items)`;
+                }
             } catch (err) {
                 console.error('Failed to confirm orders:', err);
-                showToast('Failed to confirm some orders');
+                showToast('Failed to confirm orders');
                 confirmBtn.disabled = false;
                 confirmBtn.textContent = `📧 Confirm All Orders (${window.cartOrders.length} items)`;
             }
