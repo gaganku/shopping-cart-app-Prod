@@ -18,78 +18,59 @@ app.use((req, res, next) => {
     next();
 });
 
-// API Proxy Routes
-
-// Order Service (Specific routes first)
-app.use('/api/user/orders', createProxyMiddleware({ 
-    target: 'http://localhost:3003',
-    changeOrigin: true
-}));
-
-// Auth Service routes
-app.use('/api/auth', createProxyMiddleware({ 
-    target: 'http://localhost:3001',
-    changeOrigin: true
-}));
-
-app.use('/api/login', createProxyMiddleware({ 
-    target: 'http://localhost:3001',
-    changeOrigin: true
-}));
-
-app.use('/api/signup', createProxyMiddleware({ 
-    target: 'http://localhost:3001',
-    changeOrigin: true
-}));
-
-app.use('/api/logout', createProxyMiddleware({ 
-    target: 'http://localhost:3001',
-    changeOrigin: true
-}));
-
-app.use('/api/user', createProxyMiddleware({ 
-    target: 'http://localhost:3001',
-    changeOrigin: true
-}));
-
-app.use('/auth', createProxyMiddleware({ 
+// Proxy Instances
+const authProxy = createProxyMiddleware({ 
     target: 'http://localhost:3001',
     changeOrigin: true,
     ws: true
-}));
+});
 
-// Product Service
-app.use('/api/products', createProxyMiddleware({ 
+const productProxy = createProxyMiddleware({ 
     target: 'http://localhost:3002',
     changeOrigin: true
-}));
+});
 
-// Order Service routes
-app.use('/api/orders', createProxyMiddleware({ 
+const orderProxy = createProxyMiddleware({ 
     target: 'http://localhost:3003',
     changeOrigin: true
-}));
+});
 
-app.use('/api/purchase', createProxyMiddleware({ 
-    target: 'http://localhost:3003',
-    changeOrigin: true
-}));
+// Manual Routing to prevent path stripping
+app.use((req, res, next) => {
+    const path = req.path;
 
-app.use('/api/report', createProxyMiddleware({ 
-    target: 'http://localhost:3003',
-    changeOrigin: true
-}));
+    // Order Service
+    if (path.startsWith('/api/user/orders') || 
+        path.startsWith('/api/orders') || 
+        path.startsWith('/api/purchase') || 
+        path.startsWith('/api/report')) {
+        return orderProxy(req, res, next);
+    }
+
+    // Product Service
+    if (path.startsWith('/api/products')) {
+        return productProxy(req, res, next);
+    }
+
+    // Auth Service
+    if (path.startsWith('/api/auth') || 
+        path.startsWith('/api/login') || 
+        path.startsWith('/api/signup') || 
+        path.startsWith('/api/logout') || 
+        path.startsWith('/api/user') || 
+        path.startsWith('/auth')) {
+        return authProxy(req, res, next);
+    }
+
+    next();
+});
 
 // Serve Static Files (Frontend)
 // Create static middleware once
 const staticMiddleware = express.static(path.join(__dirname, '../../public'));
 
-// Only serve static files for non-API routes
+// Only serve static files for non-API routes (Fallback)
 app.use((req, res, next) => {
-    // Skip static file serving for API routes
-    if (req.path.startsWith('/api') || req.path.startsWith('/auth')) {
-        return next();
-    }
     staticMiddleware(req, res, next);
 });
 
