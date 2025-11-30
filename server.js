@@ -274,10 +274,15 @@ app.post('/api/auth/google/verify-otp', async (req, res) => {
         }
 
         // OTP Valid
-        if (sessionData.isExistingUser) {
-            // Log in existing user
+        // Check if we have a user ID (Existing user OR New Form Signup)
+        if (sessionData.userId) {
             const user = await User.findById(sessionData.userId);
             if (!user) return res.status(404).json({ error: 'User not found' });
+
+            // If this was a new signup (not existing user flow), mark as verified
+            if (!sessionData.isExistingUser) {
+                user.isVerified = true;
+            }
 
             user.lastLogin = new Date();
             await user.save();
@@ -287,12 +292,12 @@ app.post('/api/auth/google/verify-otp', async (req, res) => {
                 delete req.session.googleAuth; // Clear session data
                 req.session.save((saveErr) => {
                     if (saveErr) console.error('Session save error:', saveErr);
-                    res.json({ message: 'Login successful' });
+                    // Redirect to index for both login and signup flows
+                    res.json({ message: 'Verification successful', redirect: '/index.html' });
                 });
             });
         } else {
-            // New user - allow to proceed to completion
-            // Don't clear session yet, we need profile data for completion
+            // New Google User (No user record yet) - needs to complete profile
             sessionData.otpVerified = true;
             req.session.save((saveErr) => {
                 if (saveErr) {
