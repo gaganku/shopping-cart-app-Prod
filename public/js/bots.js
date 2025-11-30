@@ -10,8 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', () => {
         const bot = document.querySelector('.cyber-bot');
         if (bot) {
-            const right = 20;
-            const bottom = 20;
+            const isMobile = window.innerWidth <= 768;
+            const right = isMobile ? 10 : 20;
+            const bottom = isMobile ? 80 : 20; // Higher on mobile to avoid nav bar overlap if any
+            
             homePosition = {
                 x: window.innerWidth - right - bot.offsetWidth,
                 y: window.innerHeight - bottom - bot.offsetHeight
@@ -19,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // If not moving and not dragging, snap to new home
             if (!isMoving) {
+                bot.style.left = `${homePosition.x}px`;
                 bot.style.top = `${homePosition.y}px`;
             }
         }
@@ -444,10 +447,22 @@ async function walkToProduct(bot, productCard) {
     // Get product position
     const productRect = productCard.getBoundingClientRect();
     const botRect = bot.getBoundingClientRect();
+    const isMobile = window.innerWidth <= 768;
     
-    // Target position (to the left of the product)
-    const targetX = productRect.left - 120;
-    const targetY = productRect.top + (productRect.height / 2) - (botRect.height / 2);
+    let targetX, targetY;
+
+    if (isMobile) {
+        // Mobile: Position below the card, centered horizontally
+        targetX = productRect.left + (productRect.width / 2) - (botRect.width / 2);
+        targetY = productRect.bottom + 10; // 10px below card
+        
+        // Ensure it stays within viewport
+        targetX = Math.max(10, Math.min(targetX, window.innerWidth - botRect.width - 10));
+    } else {
+        // Desktop: Position to the left of the product
+        targetX = productRect.left - 120;
+        targetY = productRect.top + (productRect.height / 2) - (botRect.height / 2);
+    }
     
     // Add walking class
     bot.classList.add('walking');
@@ -459,7 +474,12 @@ async function walkToProduct(bot, productCard) {
     bot.classList.remove('walking');
     
     // Point with speech bubble
-    bot.classList.add('pointing-right');
+    if (isMobile) {
+        bot.classList.add('pointing-up');
+    } else {
+        bot.classList.add('pointing-right');
+    }
+    
     const phrase = phrases[Math.floor(Math.random() * phrases.length)];
     showBubble(bot, phrase);
     
@@ -467,7 +487,7 @@ async function walkToProduct(bot, productCard) {
     await sleep(4000);
     
     // Remove pointing
-    bot.classList.remove('pointing-right');
+    bot.classList.remove('pointing-right', 'pointing-up');
     
     // Return home
     bot.classList.add('walking');

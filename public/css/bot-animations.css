@@ -52,6 +52,26 @@
     }
 }
 
+/* Bot Pointing Up Animation */
+.cyber-bot.pointing-up::before {
+    content: '👆';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    animation: pointUp 0.5s ease-in-out infinite;
+}
+
+@keyframes pointUp {
+    0%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    50% {
+        transform: translateX(-50%) translateY(-5px);
+    }
+}
+
 /* Crying Animation */
 .cyber-bot .tear {
     position: absolute;
