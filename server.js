@@ -242,8 +242,9 @@ app.get('/auth/google/callback',
                 params.append('preview', etherealUrl);
             }
             if (!emailSent && !etherealUrl) {
-                // Fallback: Pass OTP in URL for testing if email failed
-                params.append('fallbackOtp', otp);
+                // Fallback: Do NOT pass OTP in URL anymore
+                // params.append('fallbackOtp', otp); 
+                console.log('Email failed, but not exposing OTP in URL');
             }
             
             if (params.toString()) {
