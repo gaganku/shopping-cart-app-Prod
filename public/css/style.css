@@ -1020,6 +1020,10 @@ main {
     opacity: 1;
 }
 
+.menu-close-btn {
+    display: none;
+}
+
 /* Mobile Menu Responsive */
 @media (max-width: 768px) {
     /* Reduce header padding for mobile */
