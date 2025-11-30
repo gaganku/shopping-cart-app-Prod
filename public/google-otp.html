@@ -103,7 +103,7 @@
         <p style="margin-bottom: 2rem; color: #cbd5e1;">We've sent a verification code to your email.</p>
         
         <div class="input-group">
-            <input type="text" id="otp-input" maxlength="6" placeholder="000000" autofocus>
+            <input type="text" id="otp-input" maxlength="6" placeholder="000000" autocomplete="off" inputmode="numeric" autofocus>
         </div>
         
         <button id="verify-btn">Verify Code</button>
@@ -151,6 +151,35 @@
             }
         });
 
+        // Check for email failure and display fallback OTP
+        async function checkEmailStatus() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailFailed = urlParams.get('emailFailed');
+            
+            if (emailFailed === 'true') {
+                try {
+                    const res = await fetch('/api/auth/google/session-info');
+                    const data = await res.json();
+                    
+                    if (data.fallbackOtp) {
+                        const messageP = document.querySelector('.card p');
+                        const fallbackDiv = document.createElement('div');
+                        fallbackDiv.style.cssText = 'background: rgba(139, 92, 246, 0.1); padding: 15px; border-radius: 12px; margin: 20px 0;';
+                        fallbackDiv.innerHTML = `
+                            <p style="margin: 0 0 10px 0; font-size: 14px; color: #f59e0b;">⚠️ Email service unavailable. Use the code below:</p>
+                            <h1 style="margin: 0; color: #8b5cf6; letter-spacing: 8px; font-size: 32px; text-align: center;">${data.fallbackOtp}</h1>
+                            <p style="margin: 10px 0 0 0; font-size: 13px; color: #94a3b8;">Enter this code above to continue.</p>
+                        `;
+                        messageP.insertAdjacentElement('afterend', fallbackDiv);
+                        messageP.textContent = '⚠️ Email delivery failed.';
+                        console.log('[Google OTP] Using fallback OTP display');
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch session info:', err);
+                }
+            }
+        }
+
         // Check for preview URL in query params (for dev/test mode)
         const urlParams = new URLSearchParams(window.location.search);
         const previewUrl = urlParams.get('preview');
@@ -163,18 +192,12 @@
             previewLink.style.color = '#facc15'; // Yellow
             previewLink.style.textDecoration = 'none';
             previewLink.style.fontWeight = 'bold';
-            previewLink.textContent = 'View Test Email (Dev Mode)';
+            previewLink.textContent = '📧 View Test Email (Dev Mode)';
             document.querySelector('.card').appendChild(previewLink);
         }
 
-        // Check for fallback OTP (if email failed)
-        // Removed for production security
-        /*
-        const fallbackOtp = urlParams.get('fallbackOtp');
-        if (fallbackOtp) {
-            // ...
-        }
-        */
+        // Initialize
+        checkEmailStatus();
     </script>
 </body>
 </html>

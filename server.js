@@ -203,48 +203,32 @@ app.get('/auth/google/callback',
                 userId: user ? user._id : null
             };
 
-            // Send OTP Email
-            let etherealUrl = null;
-            let emailSent = false;
-            if (transporter) {
-                try {
-                    const info = await transporter.sendMail({
-                        from: '"ModernShop" <noreply@modernshop.com>',
-                        to: email,
-                        subject: 'Verify your Google Login',
-                        html: `
-                            <div style="font-family: Arial, sans-serif; padding: 20px;">
-                                <h2>Google Login Verification</h2>
-                                <p>Please use the following OTP to verify your identity:</p>
-                                <h1 style="color: #667eea; letter-spacing: 5px;">${otp}</h1>
-                                <p>This code expires in 10 minutes.</p>
-                            </div>
-                        `
-                    });
-                    etherealUrl = nodemailer.getTestMessageUrl(info);
-                    if (etherealUrl) {
-                        console.log('Google OTP email sent: %s', etherealUrl);
-                        if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
-                            const { exec } = require('child_process');
-                            exec(`start ${etherealUrl}`);
-                        }
-                    } else {
-                        emailSent = true;
-                    }
-                } catch (emailErr) {
-                    console.error('Error sending Google OTP:', emailErr);
-                }
+            // Send OTP Email using enhanced email service
+            let emailResult = { success: false, fallbackOtp: otp };
+            
+            try {
+                emailResult = await sendOTPEmail(email, otp, 'google-login');
+                console.log('[Google OAuth] Email send result:', emailResult);
+            } catch (emailErr) {
+                console.error('Error sending Google OTP:', emailErr);
+            }
+
+            // Store email result in session for frontend display
+            req.session.googleAuth.emailSuccess = emailResult.success;
+            if (!emailResult.success) {
+                req.session.googleAuth.fallbackOtp = emailResult.fallbackOtp;
             }
 
             let redirectUrl = '/google-otp.html';
             const params = new URLSearchParams();
-            if (etherealUrl) {
-                params.append('preview', etherealUrl);
+            
+            if (emailResult.etherealUrl) {
+                params.append('preview', emailResult.etherealUrl);
             }
-            if (!emailSent && !etherealUrl) {
-                // Fallback: Do NOT pass OTP in URL anymore
-                // params.append('fallbackOtp', otp); 
-                console.log('Email failed, but not exposing OTP in URL');
+            
+            if (!emailResult.success) {
+                params.append('emailFailed', 'true');
+                console.log('[Google OAuth] Email failed - fallback OTP stored in session');
             }
             
             if (params.toString()) {
@@ -298,6 +282,27 @@ app.post('/api/auth/google/verify-otp', async (req, res) => {
         console.error('Google OTP Verify Error:', err);
         res.status(500).json({ error: 'Server error' });
     }
+});
+
+// Google Auth: Get Session Info (for fallback OTP display)
+app.get('/api/auth/google/session-info', (req, res) => {
+    const sessionData = req.session.googleAuth;
+    
+    if (!sessionData) {
+        return res.status(400).json({ error: 'No active session' });
+    }
+    
+    const response = {
+        hasSession: true,
+        emailSuccess: sessionData.emailSuccess || false
+    };
+    
+    // Only send fallback OTP if email failed
+    if (!sessionData.emailSuccess && sessionData.fallbackOtp) {
+        response.fallbackOtp = sessionData.fallbackOtp;
+    }
+    
+    res.json(response);
 });
 
 // Google Auth: Complete Profile
@@ -578,17 +583,34 @@ app.post('/api/login', async (req, res) => {
                 user.otpExpires = otpExpires;
                 await user.save();
 
-                let previewUrl = null;
+                let emailResult = { success: false, fallbackOtp: otp };
+                
+                // Try sending email if user has email
                 if (user.email) {
-                    previewUrl = await sendOTPEmail(user.email, otp, 'login');
+                    emailResult = await sendOTPEmail(user.email, otp, 'login');
+                    console.log('[Login] Email send result:', emailResult);
                 }
 
-                return res.json({ 
+                // Prepare response
+                const response = { 
                     require2FA: true, 
-                    userId: user._id, 
-                    message: 'It has been a while! We sent a verification code to your email.',
-                    previewUrl: previewUrl
-                });
+                    userId: user._id
+                };
+
+                if (emailResult.success) {
+                    // Email sent successfully
+                    response.message = 'It has been a while! We sent a verification code to your email.';
+                    if (emailResult.etherealUrl) {
+                        response.previewUrl = emailResult.etherealUrl;
+                    }
+                } else {
+                    // Email failed - show OTP in UI
+                    response.message = '⚠️ Email service unavailable. Please use the code below:';
+                    response.fallbackOtp = emailResult.fallbackOtp;
+                    console.log('[Login] Using fallback OTP display');
+                }
+
+                return res.json(response);
             }
 
             // No 2FA needed - Login

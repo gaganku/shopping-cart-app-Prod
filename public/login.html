@@ -341,7 +341,7 @@
         <div class="modal-card">
             <h2 class="modal-title">Two-Step Verification</h2>
             <p class="modal-text">We've sent a verification code to your email. Please enter it below to continue.</p>
-            <input type="text" id="otp-input" class="login-input" placeholder="Enter 6-digit code" style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;" autocomplete="off">
+            <input type="text" id="otp-input" class="login-input" placeholder="Enter 6-digit code" style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;" autocomplete="off" inputmode="numeric">
             <button class="modal-btn modal-btn-primary">Verify Code</button>
             <button class="modal-btn modal-btn-secondary">Cancel</button>
         </div>
@@ -454,24 +454,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.require2FA) {
                     pendingUserId = data.userId;
                     const modalText = document.querySelector('#modal-2fa .modal-text');
-                    if (modalText) modalText.textContent = data.message;
                     
-                    // Show preview link if available (Dev Mode)
-                    if (data.previewUrl) {
-                        let previewLink = document.getElementById('otp-preview-link');
-                        if (!previewLink) {
-                            previewLink = document.createElement('a');
-                            previewLink.id = 'otp-preview-link';
-                            previewLink.target = '_blank';
-                            previewLink.style.display = 'block';
-                            previewLink.style.marginTop = '10px';
-                            previewLink.style.color = '#667eea';
-                            previewLink.style.fontWeight = 'bold';
-                            previewLink.style.textDecoration = 'none';
-                            document.querySelector('#modal-2fa .modal-content').appendChild(previewLink);
+                    // Check if email failed and we have fallback OTP
+                    if (data.fallbackOtp) {
+                        // Display OTP directly in the modal
+                        if (modalText) {
+                            modalText.innerHTML = `
+                                ${data.message}<br><br>
+                                <div style="background: rgba(139, 92, 246, 0.1); padding: 15px; border-radius: 12px; margin: 15px 0;">
+                                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #94a3b8;">Your verification code:</p>
+                                    <h1 style="margin: 0; color: #8b5cf6; letter-spacing: 8px; font-size: 32px; text-align: center;">${data.fallbackOtp}</h1>
+                                </div>
+                                <p style="font-size: 13px; color: #f59e0b; margin-top: 10px;">⚠️ Please enter this code below to continue.</p>
+                            `;
                         }
-                        previewLink.href = data.previewUrl;
-                        previewLink.textContent = 'View Test Email (Dev Mode)';
+                    } else {
+                        // Normal email sent
+                        if (modalText) modalText.textContent = data.message;
+                        
+                        // Show preview link if available (Dev Mode)
+                        if (data.previewUrl) {
+                            let previewLink = document.getElementById('otp-preview-link');
+                            if (!previewLink) {
+                                previewLink = document.createElement('a');
+                                previewLink.id = 'otp-preview-link';
+                                previewLink.target = '_blank';
+                                previewLink.style.display = 'block';
+                                previewLink.style.marginTop = '10px';
+                                previewLink.style.color = '#667eea';
+                                previewLink.style.fontWeight = 'bold';
+                                previewLink.style.textDecoration = 'none';
+                                modalText.parentElement.appendChild(previewLink);
+                            }
+                            previewLink.href = data.previewUrl;
+                            previewLink.textContent = 'View Test Email (Dev Mode)';
+                        }
                     }
 
                     show2FAModal();

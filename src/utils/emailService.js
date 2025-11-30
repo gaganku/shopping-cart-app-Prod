@@ -7,8 +7,13 @@ const sendOTPEmail = async (email, otp, purpose = 'login') => {
     console.log(`[EmailService] Attempting to send OTP to: ${email}`);
     
     if (!transporter) {
-        console.error('[EmailService] Email transporter not initialized');
-        return;
+        console.error('[EmailService] ❌ Email transporter not initialized - will use UI fallback');
+        return { 
+            success: false, 
+            fallbackOtp: otp,
+            etherealUrl: null,
+            error: 'Email service not configured'
+        };
     }
 
     const subject = purpose === 'login' ? 'Your Login OTP' : 'Your Verification Code';
@@ -32,21 +37,33 @@ const sendOTPEmail = async (email, otp, purpose = 'login') => {
             `
         });
 
-        console.log('[EmailService] Email sent successfully. MessageID:', info.messageId);
+        console.log('[EmailService] ✅ Email sent successfully. MessageID:', info.messageId);
 
         const etherealUrl = nodemailer.getTestMessageUrl(info);
         if (etherealUrl) {
-            console.log('[EmailService] Ethereal URL:', etherealUrl);
+            console.log('[EmailService] 📧 Ethereal URL:', etherealUrl);
             // Only auto-open in local development on Windows
             if (process.env.NODE_ENV !== 'production' && process.platform === 'win32') {
                 const { exec } = require('child_process');
                 exec(`start ${etherealUrl}`);
             }
+            return { success: true, etherealUrl, fallbackOtp: null };
         }
-        return etherealUrl;
+        
+        // Real email sent (Gmail/SMTP)
+        return { success: true, etherealUrl: null, fallbackOtp: null };
+        
     } catch (error) {
-        console.error('[EmailService] Error sending OTP email:', error);
-        return null;
+        console.error('[EmailService] ❌ Error sending OTP email:', error.message);
+        console.error('[EmailService] 🔄 Falling back to UI display');
+        
+        // Return OTP for UI display as fallback
+        return { 
+            success: false, 
+            fallbackOtp: otp,
+            etherealUrl: null,
+            error: error.message
+        };
     }
 };
 
